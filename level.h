@@ -4,19 +4,21 @@
 #define MAP_WIDTH 28
 #define MAP_HEIGHT 16
 
-#define MAP_TILE_BRICK '#'
-#define MAP_TILE_EMPTY ' '
-#define MAP_TILE_FALSE 'X'
-#define MAP_TILE_GOLD '$'
-#define MAP_TILE_GUARD '0'
-#define MAP_TILE_HLADDER 'S'
-#define MAP_TILE_LADDER 'H'
-#define MAP_TILE_ROPE '-'
-#define MAP_TILE_RUNNER '&'
-#define MAP_TILE_SOLID '@'
+enum map_tile_t {
+    MAP_TILE_BRICK = '#',
+    MAP_TILE_EMPTY = ' ',
+    MAP_TILE_FALSE = 'X',
+    MAP_TILE_GOLD = '$',
+    MAP_TILE_GUARD = '0',
+    MAP_TILE_HLADDER = 'S',
+    MAP_TILE_LADDER = 'H',
+    MAP_TILE_ROPE = '-',
+    MAP_TILE_RUNNER = '&',
+    MAP_TILE_SOLID = '@',
+};
 
 struct level {
-    char map[MAP_HEIGHT][MAP_WIDTH];
+    enum map_tile_t map[MAP_HEIGHT][MAP_WIDTH];
 };
 
 struct level *load_level(int n);

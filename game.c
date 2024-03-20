@@ -1,5 +1,7 @@
 #include <SDL2/SDL.h>
+#include "animation.h"
 #include "exit.h"
+#include "tile.h"
 #include "game.h"
 #include "level.h"
 #include "render.h"
@@ -7,41 +9,40 @@
 #include "texture.h"
 #include "xmalloc.h"
 
-#define COL_INFO_SCORE 0
-#define COL_INFO_LIFE 13
-#define COL_INFO_LEVEL 20
-
 #define RUNNER_DX 8
+#define RUNNER_DY 9
 
-static struct tile *map_tile_init(enum texture t, int row, int col)
+static struct map_tile *map_tile_init(enum map_tile_t t, enum animation_t a,
+    int row, int col)
 {
-    struct tile *tl = xmalloc(sizeof(struct tile));
-    tl->texture = texture_get(t);
-    tl->x = col * TILE_MAP_WIDTH;
-    tl->y = row * TILE_MAP_HEIGHT;
-    tl->tx = 0;
-    tl->ty = 0;
-    tl->tw = TILE_MAP_WIDTH;
-    tl->th = TILE_MAP_HEIGHT;
+    struct map_tile *m = xmalloc(sizeof(struct map_tile));
 
-    return tl;
+    if (t != MAP_TILE_EMPTY) {
+        m->basea = animation_init(a);
+    } else {
+        m->basea = NULL;
+    }
+    m->cura = m->basea;
+    m->baset = t;
+    m->curt = m->baset;
+    m->x = col * TILE_MAP_WIDTH;
+    m->y = row * TILE_MAP_HEIGHT;
+
+    return m;
 }
 
-static struct tile *ground_tile_init(int col)
+static struct ground_tile *ground_tile_init(int col)
 {
-    struct tile *tl = xmalloc(sizeof(struct tile));
-    tl->texture = texture_get(TEXTURE_GROUND);
+    struct ground_tile *tl = xmalloc(sizeof(struct ground_tile));
+    tl->sprite = animation_sprite_init(TEXTURE_GROUND, 0, 0,
+        TILE_GROUND_WIDTH, TILE_GROUND_HEIGHT);
     tl->x = col * TILE_GROUND_WIDTH;
     tl->y = MAP_HEIGHT * TILE_MAP_HEIGHT;
-    tl->tx = 0;
-    tl->ty = 0;
-    tl->tw = TILE_GROUND_WIDTH;
-    tl->th = TILE_GROUND_HEIGHT;
 
     return tl;
 }
 
-static struct tile **text_tile_init(char *s, int col)
+static struct sprite **text_sprites_init(char *s)
 {
     int n = strlen(s);
     int escs = 0;
@@ -51,8 +52,8 @@ static struct tile **text_tile_init(char *s, int col)
         }
     }
 
-    int ntiles = n - escs + 1;
-    struct tile **tiles = xmalloc(sizeof(struct tile *) * ntiles);
+    int nsprites = n - escs + 1;
+    struct sprite **sprites = xmalloc(sizeof(struct sprite *) * nsprites);
     for (int i = 0, j = 0; i < n; i++, j++) {
         char ch = s[i];
         int img = 0;
@@ -67,6 +68,8 @@ static struct tile **text_tile_init(char *s, int col)
             idx = 40;
         } else if (img && ch == MAP_TILE_GUARD) {
             idx = 41;
+        } else if (ch == ' ') {
+            idx = 43;
         } else if (ch >= 'A' && ch <= 'Z') {
             idx = 10 + ch - 'A';
         } else if (ch >= '0' && ch <= '9') {
@@ -77,33 +80,279 @@ static struct tile **text_tile_init(char *s, int col)
         int r = idx / 10;
         int c = idx % 10;
 
-        struct tile *tl = xmalloc(sizeof(struct tile));
-        tl->texture = texture_get(TEXTURE_TEXT);
-        tl->x = (col + j) * TILE_TEXT_WIDTH;
-        tl->y = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
-        tl->tx = c * TILE_TEXT_WIDTH;
-        tl->ty = r * TILE_TEXT_HEIGHT;
-        tl->tw = TILE_TEXT_WIDTH;
-        tl->th = TILE_TEXT_HEIGHT;
-        tiles[j] = tl;
+        struct sprite *sp = xmalloc(sizeof(struct sprite));
+        sp->texture = texture_get(TEXTURE_TEXT);
+        sp->x = c * TILE_TEXT_WIDTH;
+        sp->y = r * TILE_TEXT_HEIGHT;
+        sp->w = TILE_TEXT_WIDTH;
+        sp->h = TILE_TEXT_HEIGHT;
+        sprites[j] = sp;
     }
-    tiles[ntiles - 1] = NULL;
+    sprites[nsprites - 1] = NULL;
 
-    return tiles;
+    return sprites;
 }
 
-static void move_runner(struct game *game, int key)
+static bool is_tile(struct game *game, int x, int y, enum map_tile_t t)
+{
+    return game->map[y][x]->curt == t;
+}
+
+static bool can_move(struct game *game, int x, int y)
+{
+    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) {
+        return false;
+    }
+
+    return is_tile(game, x, y, MAP_TILE_EMPTY)
+        || is_tile(game, x, y, MAP_TILE_LADDER)
+        || is_tile(game, x, y, MAP_TILE_ROPE);
+}
+
+// TODO: Check correct usage.
+static bool empty_tile(struct game *game, int x, int y)
+{
+    // TODO: Support false brick.
+    return is_tile(game, x, y, MAP_TILE_EMPTY);
+}
+
+// TODO: Free digging hole animation.
+static void runner_tick(struct game *game, int key)
+{
+    struct runner *runner = game->runner;
+    enum runner_state state = runner->state;
+    bool move = false;
+    int x = runner->x;
+    int y = runner->y;
+    int tx = runner->tx;
+    int ty = runner->ty;
+
+    if (state == RSTATE_DIG_LEFT || state == RSTATE_DIG_RIGHT) {
+        animation_tick(runner->holelefta);
+        animation_tick(runner->holerighta);
+
+        int replay = animation_tick(runner->cura);
+        // Digging animation reached its end, so it is time to get back
+        // to the state runner was before digging.
+        if (replay) {
+            struct animation *fill = animation_init(ANIMATION_HOLE_FILL);
+
+            if (state == RSTATE_DIG_LEFT) {
+                game->map[runner->y + 1][runner->x - 1]->cura = fill;
+                state = RSTATE_LEFT;
+            } else {
+                game->map[runner->y + 1][runner->x + 1]->cura = fill;
+                state = RSTATE_RIGHT;
+            }
+        }
+    } else if ((state == RSTATE_FALL_LEFT || state == RSTATE_FALL_RIGHT)
+        || (empty_tile(game, x, y + 1) && !is_tile(game, x, y, MAP_TILE_ROPE))) {
+        // Continue falling process or start falling if runner is stending on
+        // empty brick.
+
+        if (state == RSTATE_FALL_LEFT || state == RSTATE_CLIMB_LEFT
+            || state == RSTATE_LEFT) {
+            state = RSTATE_FALL_LEFT;
+        } else {
+            state = RSTATE_FALL_RIGHT;
+        }
+        move = true;
+        tx = 0;
+        ty += RUNNER_DY;
+        if (ty > TILE_MAP_HEIGHT / 2) {
+            y += 1;
+            ty -= TILE_MAP_HEIGHT;
+        }
+
+        // Grab the rope when falling. Grab it only if runner was falling
+        // initially and not dropped the rope he was hanging before. Which
+        // can be detected by ty value.
+        if (is_tile(game, x, y, MAP_TILE_ROPE) && (ty > 0 && ty < RUNNER_DY)) {
+            ty = 0;
+            if (state == RSTATE_FALL_LEFT) {
+                state = RSTATE_CLIMB_LEFT;
+            } else {
+                state = RSTATE_CLIMB_RIGHT;
+            }
+        } else if ((!empty_tile(game, x, y + 1)
+                && !is_tile(game, x, y + 1, MAP_TILE_ROPE))
+            && ty >= 0) {
+
+            // Stop, we have reached some solid ground.
+            ty = 0;
+            state = RSTATE_STOP;
+        }
+    } else if (key != 0) {
+        move = true;
+
+        switch (key) {
+        case SDLK_LEFT:
+            tx -= RUNNER_DX;
+            ty = 0;
+            if (tx < -(TILE_MAP_WIDTH / 2)) {
+                x -= 1;
+                tx += TILE_MAP_WIDTH;
+            }
+            if (tx < 0 && !can_move(game, x - 1, y)) {
+                move = false;
+            } else {
+                if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+                    state = RSTATE_CLIMB_LEFT;
+                } else {
+                    state = RSTATE_LEFT;
+                }
+            }
+            break;
+        case SDLK_RIGHT:
+            tx += RUNNER_DX;
+            ty = 0;
+            if (tx > TILE_MAP_WIDTH / 2) {
+                x += 1;
+                tx -= TILE_MAP_WIDTH;
+            }
+            if (tx > 0 && !can_move(game, x + 1, y)) {
+                move = false;
+            } else {
+                if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+                    state = RSTATE_CLIMB_RIGHT;
+                } else {
+                    state = RSTATE_RIGHT;
+                }
+            }
+            break;
+        case SDLK_UP:
+            ty -= RUNNER_DY;
+            tx = 0;
+            if (ty < -(TILE_MAP_HEIGHT / 2)) {
+                y -= 1;
+                ty += TILE_MAP_HEIGHT;
+            }
+            bool onladder = is_tile(game, x, y, MAP_TILE_LADDER);
+            if (ty < 0 && (!onladder || !can_move(game, x, y - 1))) {
+                move = false;
+            } else {
+                state = RSTATE_UPDOWN;
+            }
+            break;
+        case SDLK_DOWN:
+            ty += RUNNER_DY;
+            tx = 0;
+            if (ty > TILE_MAP_HEIGHT / 2) {
+                y += 1;
+                ty -= TILE_MAP_HEIGHT;
+            }
+            if (ty > 0 && !can_move(game, x, y + 1)) {
+                move = false;
+            } else {
+                if (is_tile(game, x, y, MAP_TILE_ROPE)
+                    && !is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
+
+                    if (state == RSTATE_CLIMB_RIGHT) {
+                        state = RSTATE_FALL_RIGHT;
+                    } else {
+                        state = RSTATE_FALL_LEFT;
+                    }
+                } else {
+                    state = RSTATE_UPDOWN;
+                }
+            }
+            break;
+        case SDLK_x:
+            // Dig only bricks with empty space above.
+            if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
+                && is_tile(game, x + 1, y, MAP_TILE_EMPTY)) {
+
+                runner->tx = 0;
+                game->map[runner->y + 1][runner->x + 1]->cura = NULL;
+                game->map[runner->y + 1][runner->x + 1]->curt = MAP_TILE_EMPTY;
+                state = RSTATE_DIG_RIGHT;
+                animation_reset(runner->holerighta);
+            } else {
+                move = false;
+            }
+            break;
+        case SDLK_z:
+            // Dig only bricks with empty space above.
+            if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
+                && is_tile(game, x - 1, y, MAP_TILE_EMPTY)) {
+
+                runner->tx = 0;
+                game->map[runner->y + 1][runner->x - 1]->cura = NULL;
+                game->map[runner->y + 1][runner->x - 1]->curt = MAP_TILE_EMPTY;
+                state = RSTATE_DIG_LEFT;
+                animation_reset(runner->holelefta);
+            } else {
+                move = false;
+            }
+            break;
+        }
+    }
+    if (move) {
+        runner->x = x;
+        runner->y = y;
+        runner->tx = tx;
+        runner->ty = ty;
+        animation_tick(runner->cura);
+    }
+    if (runner->state != state) {
+        // When stopped keep current animation.
+        if (state != RSTATE_STOP) {
+            runner->cura = runner_state_animation(runner, state);
+            animation_reset(runner->cura);
+        }
+        runner->state = state;
+    }
+}
+
+static void map_tick(struct game *game)
+{
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            struct map_tile *t = game->map[i][j];
+            if (t != NULL && t->cura != NULL) {
+                bool replay = animation_tick(t->cura);
+                if (replay) {
+                    t->cura = t->basea;
+                    t->curt = t->baset;
+                }
+            }
+        }
+    }
+}
+
+/*
+ * Check game state for collisions: runner or guard death.
+ * TODO: Gold picking up or lossing here?
+ */
+static void detect_collision(struct game *game)
+{
+    // Runner is walled up in the wall.
+    // TODO: Also check runner-guard collision here.
+    int rx = game->runner->x;
+    int ry = game->runner->y;
+    if (is_tile(game, rx, ry, MAP_TILE_BRICK)) {
+        // TODO:
+    }
+}
+
+// TODO: Do we need to pass game or runner struct can be enough?
+static void runner_render(SDL_Renderer *renderer, struct game *game)
 {
     struct runner *runner = game->runner;
 
-    // TODO: Moving to the next tile.
-    switch (key) {
-    case SDLK_LEFT:
-        runner->x += RUNNER_DX;
-        break;
-    case SDLK_RIGHT:
-        runner->x -= RUNNER_DX;
-        break;
+    render(renderer, *(runner->cura->cur),
+            runner->x * TILE_MAP_WIDTH + runner->tx,
+            runner->y * TILE_MAP_HEIGHT + runner->ty);
+
+    if (runner->state == RSTATE_DIG_LEFT) {
+        render(renderer, *(runner->holelefta->cur),
+            (runner->x - 1) * TILE_MAP_WIDTH,
+            (runner->y) * TILE_MAP_HEIGHT);
+    }
+    if (runner->state == RSTATE_DIG_RIGHT) {
+        render(renderer, *(runner->holerighta->cur),
+            (runner->x + 1) * TILE_MAP_WIDTH,
+            (runner->y) * TILE_MAP_HEIGHT);
     }
 }
 
@@ -117,36 +366,50 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
         for (int j = 0; j < MAP_WIDTH; j++) {
             switch (lvl->map[i][j]) {
             case MAP_TILE_BRICK:
-                game->map[i][j] = map_tile_init(TEXTURE_BRICK, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_BRICK,
+                    ANIMATION_BRICK, i, j);
                 break;
             case MAP_TILE_EMPTY:
-                game->map[i][j] = NULL;
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    0, i, j);
                 break;
             case MAP_TILE_FALSE:
-                game->map[i][j] = NULL;
+                // TODO:
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    0, i, j);
                 break;
             case MAP_TILE_GOLD:
-                game->map[i][j] = NULL;
+                // TODO:
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    0, i, j);
                 break;
             case MAP_TILE_GUARD:
-                game->map[i][j] = NULL;
+                // TODO:
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    0, i, j);
                 break;
             case MAP_TILE_HLADDER:
-                game->map[i][j] = NULL;
+                // TODO:
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    0, i, j);
                 break;
             case MAP_TILE_LADDER:
-                game->map[i][j] = map_tile_init(TEXTURE_LADDER, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_LADDER,
+                    ANIMATION_LADDER, i, j);
                 break;
             case MAP_TILE_ROPE:
-                game->map[i][j] = map_tile_init(TEXTURE_ROPE, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_ROPE,
+                    ANIMATION_ROPE, i, j);
                 break;
             case MAP_TILE_RUNNER:
-                game->map[i][j] = NULL;
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    0, i, j);
                 game->runner->x = j;
                 game->runner->y = i;
                 break;
             case MAP_TILE_SOLID:
-                game->map[i][j] = map_tile_init(TEXTURE_SOLID, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_SOLID,
+                    ANIMATION_SOLID, i, j);
                 break;
             default:
                 die("TODO");
@@ -160,11 +423,11 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
 
     char buf[16];
     snprintf(buf, 16, "SCORE%07d", 5);
-    game->info_score = text_tile_init(buf, COL_INFO_SCORE);
-    snprintf(buf, 16, "MEN%03d", 5);
-    game->info_life = text_tile_init(buf, COL_INFO_LIFE);
-    snprintf(buf, 16, "LEVEL%03d", 5);
-    game->info_level = text_tile_init(buf, COL_INFO_LEVEL);
+    game->info_score = text_sprites_init(buf);
+    snprintf(buf, 16, " MEN%03d", 5);
+    game->info_life = text_sprites_init(buf);
+    snprintf(buf, 16, " LEVEL%03d", 5);
+    game->info_level = text_sprites_init(buf);
 
     return game;
 }
@@ -173,35 +436,39 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 {
     for (int i = 0; i < MAP_HEIGHT; i++) {
         for (int j = 0; j < MAP_WIDTH; j++) {
-            struct tile *t = game->map[i][j];
-            if (t != NULL) {
-                render(renderer, t);
+            struct map_tile *t = game->map[i][j];
+            if (t != NULL && t->cura != NULL) {
+                render(renderer, *(t->cura->cur), t->x, t->y);
             }
         }
     }
 
-    struct runner *r = game->runner;
-    r->tile->x = r->x * TILE_MAP_WIDTH + r->tx;
-    r->tile->y = r->y * TILE_MAP_HEIGHT + r->ty;
-    render(renderer, r->tile);
+    runner_render(renderer, game);
 
     for (int i = 0; i < MAP_WIDTH; i++) {
-        render(renderer, game->ground[i]);
+        struct ground_tile *t = game->ground[i];
+        render(renderer, t->sprite, t->x, t->y);
     }
-    for (int i = 0; game->info_score[i] != NULL; i++) {
-        render(renderer, game->info_score[i]);
+
+
+    int col = 0;
+    int yinfo = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
+    for (int i = 0; game->info_score[i] != NULL; i++, col++) {
+        render(renderer, game->info_score[i], col * TILE_TEXT_WIDTH, yinfo);
     }
-    for (int i = 0; game->info_life[i] != NULL; i++) {
-        render(renderer, game->info_life[i]);
+    for (int i = 0; game->info_life[i] != NULL; i++, col++) {
+        render(renderer, game->info_life[i], col * TILE_TEXT_WIDTH, yinfo);
     }
-    for (int i = 0; game->info_level[i] != NULL; i++) {
-        render(renderer, game->info_level[i]);
+    for (int i = 0; game->info_level[i] != NULL; i++, col++) {
+        render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, yinfo);
     }
 }
 
 void game_tick(struct game *game, int key)
 {
-    move_runner(game, key);
+    map_tick(game);
+    runner_tick(game, key);
+    detect_collision(game);
 }
 
 void game_destroy(struct game *game)

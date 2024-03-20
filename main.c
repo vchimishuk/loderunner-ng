@@ -67,15 +67,19 @@ int main()
     /* t->h = TILE_TEXT_HEIGHT; */
 
     SDL_Event event;
+    int key = 0;
     for (;;) {
-        int key = 0;
         while (SDL_PollEvent(&event)) {
             // printf("e: %d\n", event.type);
             switch (event.type) {
             case SDL_KEYDOWN:
                 switch (event.key.keysym.sym) {
+                case SDLK_DOWN:
                 case SDLK_LEFT:
                 case SDLK_RIGHT:
+                case SDLK_UP:
+                case SDLK_x:
+                case SDLK_z:
                     key = event.key.keysym.sym;
                     break;
                 case SDLK_q:
@@ -84,12 +88,22 @@ int main()
                     break;
                 }
                 break;
-
+            case SDL_KEYUP:
+                switch (event.key.keysym.sym) {
+                case SDLK_DOWN:
+                case SDLK_LEFT:
+                case SDLK_RIGHT:
+                case SDLK_UP:
+                case SDLK_x:
+                case SDLK_z:
+                    if (key == event.key.keysym.sym) {
+                        key = 0;
+                    }
+                    break;
+                }
+                break;
             case SDL_QUIT:
                 exit(0);
-                break;
-
-            default:
                 break;
             }
         }
@@ -103,7 +117,7 @@ int main()
 
         // TODO: Calculate delay depends on how much we spent
         //       in gaming logic and rendering.
-        SDL_Delay(1000 / FPS * 10);
+        SDL_Delay(1000 / FPS);
     }
 
     /* game_destroy */

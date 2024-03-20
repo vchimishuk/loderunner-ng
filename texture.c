@@ -33,6 +33,7 @@ void texture_init(SDL_Renderer *renderer)
     // texture_map[TILE_GOLD] = texture_load(renderer, ".png");
     // texture_map[TILE_GUARD] = texture_load(renderer, ".png");
     // texture_map[TILE_HLADDER] = texture_load(renderer, ".png");
+    textures[TEXTURE_HOLE] = texture_load(renderer, "hole.png");
     textures[TEXTURE_LADDER] = texture_load(renderer, "ladder.png");
     textures[TEXTURE_ROPE] = texture_load(renderer, "rope.png");
     textures[TEXTURE_RUNNER] = texture_load(renderer, "runner.png");

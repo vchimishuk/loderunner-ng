@@ -22,7 +22,8 @@ find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2main)
 find_package(SDL2_image REQUIRED CONFIG REQUIRED COMPONENTS SDL2_Image)
 
 add_executable(loderunner main.c
-        exit.c game.c level.c main.c path.c render.c runner.c texture.c xmalloc.c)
+               animation.c exit.c game.c level.c main.c path.c render.c runner.c
+               texture.c tile.c xmalloc.c)
 target_link_libraries(loderunner PRIVATE SDL2::SDL2main)
 # target_link_libraries(loderunner PRIVATE SDL2::SDL2_image)
 target_link_libraries(loderunner PRIVATE SDL2_image::SDL2_image)
