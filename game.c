@@ -3,6 +3,7 @@
 #include "exit.h"
 #include "tile.h"
 #include "game.h"
+#include "keyhole.h"
 #include "level.h"
 #include "render.h"
 #include "runner.h"
@@ -359,6 +360,8 @@ static void runner_render(SDL_Renderer *renderer, struct game *game)
 struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
 {
     struct game *game = xmalloc(sizeof(struct game));
+    game->state = GSTATE_START;
+    game->keyhole = 0;
     game->lvl = lvl;
     game->runner = runner_init();
 
@@ -462,13 +465,28 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     for (int i = 0; game->info_level[i] != NULL; i++, col++) {
         render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, yinfo);
     }
+
+    if (game->state == GSTATE_START) {
+        keyhole_render(renderer, (int) game->keyhole);
+    }
 }
 
 void game_tick(struct game *game, int key)
 {
-    map_tick(game);
-    runner_tick(game, key);
-    detect_collision(game);
+    switch (game->state) {
+    case GSTATE_START:
+        if (game->keyhole < KH_MAX_RADIUS) {
+            game->keyhole += KH_SPEED;
+        } else if (key != 0) {
+            game->state = GSTATE_RUN;
+        }
+        break;
+    case GSTATE_RUN:
+        map_tick(game);
+        runner_tick(game, key);
+        detect_collision(game);
+        break;
+    }
 }
 
 void game_destroy(struct game *game)

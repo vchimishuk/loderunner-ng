@@ -2,7 +2,7 @@
 #define GAME_H_
 
 #include "level.h"
-#include "tile.h"
+// #include "tile.h"
 
 /*
  * Game map single tile representation.
@@ -36,12 +36,24 @@ struct ground_tile {
     int y;
 };
 
+enum game_state {
+    /* // Runner run out of lives, GAME OVER screen is shown. */
+    /* GSTATE_END, */
+    // Game is running, user can control runner.
+    GSTATE_RUN,
+    // Game round is going to start, keyhole is shown or waiting for initial
+    // user's command.
+    GSTATE_START,
+};
+
 /*
  * Game represents single level playing process. It stores gaming state of the
  * current level, like active textures, their location, location of runner,
  * guards, gold and so on.
  */
 struct game {
+    enum game_state state;
+    float keyhole;
     struct level *lvl;
     struct map_tile *map[MAP_HEIGHT][MAP_WIDTH];
     struct ground_tile *ground[MAP_WIDTH];
