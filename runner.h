@@ -15,9 +15,13 @@ enum runner_state {
 };
 
 struct runner {
-    // X (0..MAP_WIDTH) position on the map.
+    // Start X (0..MAP_WIDTH) position on the map.
+    int sx;
+    // Start Y (0..MAP_HEIGHT) position on the map.
+    int sy;
+    // Current X (0..MAP_WIDTH) position on the map.
     int x;
-    // Y (0..MAP_HEIGHT) position on the map.
+    // Current Y (0..MAP_HEIGHT) position on the map.
     int y;
     // X offset in the current map tile. When runner moves to the second
     // half of the current tile it is transfered to the next tile. To keep
@@ -55,6 +59,7 @@ struct runner {
 };
 
 struct runner *runner_init();
+void runner_reset(struct runner *r);
 struct animation *runner_state_animation(struct runner *r, enum runner_state s);
 
 #endif /* RUNNER_H_ */

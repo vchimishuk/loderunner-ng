@@ -37,8 +37,12 @@ struct ground_tile {
 };
 
 enum game_state {
-    /* // Runner run out of lives, GAME OVER screen is shown. */
-    /* GSTATE_END, */
+    // Runner is dead or reached end of the current leve. Keyhole animation
+    // is shown.
+    GSTATE_END,
+    // Game is over. GAME OVER banner is displayed and the only option is to
+    // quit the game.
+    GSTATE_GAME_OVER,
     // Game is running, user can control runner.
     GSTATE_RUN,
     // Game round is going to start, keyhole is shown or waiting for initial
@@ -54,11 +58,13 @@ enum game_state {
 struct game {
     enum game_state state;
     float keyhole;
+    // TODO: Looks like lvl is not used.
     struct level *lvl;
+    int lives;
     struct map_tile *map[MAP_HEIGHT][MAP_WIDTH];
     struct ground_tile *ground[MAP_WIDTH];
     struct sprite **info_score;
-    struct sprite **info_life;
+    struct sprite **info_lives;
     struct sprite **info_level;
     struct runner *runner;
 };

@@ -8,10 +8,8 @@
 struct runner *runner_init()
 {
     struct runner *r = xmalloc(sizeof(struct runner));
-    r->x = 0;
-    r->y = 0;
-    r->tx = 0;
-    r->ty = 0;
+    r->sx = 0;
+    r->sy = 0;
     r->lefta = animation_init(ANIMATION_LEFT);
     r->righta = animation_init(ANIMATION_RIGHT);
     r->updowna = animation_init(ANIMATION_UPDOWN);
@@ -23,10 +21,20 @@ struct runner *runner_init()
     r->fallrighta = animation_init(ANIMATION_FALL_RIGHT);
     r->holelefta = animation_init(ANIMATION_HOLE_LEFT);
     r->holerighta = animation_init(ANIMATION_HOLE_RIGHT);
-    r->cura = r->righta;
-    r->state = RSTATE_RIGHT;
+
+    runner_reset(r);
 
     return r;
+}
+
+void runner_reset(struct runner *r)
+{
+    r->x = r->sx;
+    r->y = r->sy;
+    r->tx = 0;
+    r->ty = 0;
+    r->cura = r->righta;
+    r->state = RSTATE_RIGHT;
 }
 
 struct animation *runner_state_animation(struct runner *r,

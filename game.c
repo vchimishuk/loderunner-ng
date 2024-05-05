@@ -32,6 +32,15 @@ static struct map_tile *map_tile_init(enum map_tile_t t, enum animation_t a,
     return m;
 }
 
+static void map_tile_reset(struct map_tile *tile)
+{
+    tile->curt = tile->baset;
+    tile->cura = tile->basea;
+    if (tile->cura != NULL) {
+        animation_reset(tile->cura);
+    }
+}
+
 static struct ground_tile *ground_tile_init(int col)
 {
     struct ground_tile *tl = xmalloc(sizeof(struct ground_tile));
@@ -332,7 +341,8 @@ static void detect_collision(struct game *game)
     int rx = game->runner->x;
     int ry = game->runner->y;
     if (is_tile(game, rx, ry, MAP_TILE_BRICK)) {
-        // TODO:
+        game->state = GSTATE_END;
+        game->keyhole = KH_MAX_RADIUS;
     }
 }
 
@@ -357,12 +367,31 @@ static void runner_render(SDL_Renderer *renderer, struct game *game)
     }
 }
 
+static void game_reset(struct game *game)
+{
+    runner_reset(game->runner);
+    // TODO: Decrement men.
+    // TODO: Reset map: guards, gold, etc. Reset all tiles.
+    // TODO: Reset statistics?
+
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            map_tile_reset(game->map[i][j]);
+        }
+    }
+}
+
 struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
 {
     struct game *game = xmalloc(sizeof(struct game));
     game->state = GSTATE_START;
     game->keyhole = 0;
     game->lvl = lvl;
+    game->lives = 5;
+    game->info_score = NULL;
+    game->info_lives = NULL;
+    game->info_level = NULL;
+
     game->runner = runner_init();
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -407,8 +436,9 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
             case MAP_TILE_RUNNER:
                 game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
                     0, i, j);
-                game->runner->x = j;
-                game->runner->y = i;
+                game->runner->sx = j;
+                game->runner->sy = i;
+                runner_reset(game->runner);
                 break;
             case MAP_TILE_SOLID:
                 game->map[i][j] = map_tile_init(MAP_TILE_SOLID,
@@ -427,8 +457,8 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     char buf[16];
     snprintf(buf, 16, "SCORE%07d", 5);
     game->info_score = text_sprites_init(buf);
-    snprintf(buf, 16, " MEN%03d", 5);
-    game->info_life = text_sprites_init(buf);
+    /* snprintf(buf, 16, " MEN%03d", 5); */
+    /* game->info_life = text_sprites_init(buf); */
     snprintf(buf, 16, " LEVEL%03d", 5);
     game->info_level = text_sprites_init(buf);
 
@@ -453,20 +483,24 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         render(renderer, t->sprite, t->x, t->y);
     }
 
-
     int col = 0;
     int yinfo = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
     for (int i = 0; game->info_score[i] != NULL; i++, col++) {
         render(renderer, game->info_score[i], col * TILE_TEXT_WIDTH, yinfo);
     }
-    for (int i = 0; game->info_life[i] != NULL; i++, col++) {
-        render(renderer, game->info_life[i], col * TILE_TEXT_WIDTH, yinfo);
+    if (game->info_lives == NULL) {
+        char buf[16];
+        snprintf(buf, 16, " MEN%03d", game->lives);
+        game->info_lives = text_sprites_init(buf);
+    }
+    for (int i = 0; game->info_lives[i] != NULL; i++, col++) {
+        render(renderer, game->info_lives[i], col * TILE_TEXT_WIDTH, yinfo);
     }
     for (int i = 0; game->info_level[i] != NULL; i++, col++) {
         render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, yinfo);
     }
 
-    if (game->state == GSTATE_START) {
+    if (game->state == GSTATE_START || game->state == GSTATE_END) {
         keyhole_render(renderer, (int) game->keyhole);
     }
 }
@@ -474,6 +508,30 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 void game_tick(struct game *game, int key)
 {
     switch (game->state) {
+    case GSTATE_END:
+        if (game->keyhole > 0) {
+            game->keyhole -= KH_SPEED;
+        } else {
+            // TODO: Decrement lives. If lives become 0 show GAME OVER banner.
+            //       If levels is non-zero play double-keyhole animation and
+            //       start level again.
+            game->lives--;
+            game->info_lives = NULL; // TODO: Free memory / reset.
+            if (game->lives > 0) {
+                game_reset(game);
+                game->state = GSTATE_START;
+            } else {
+                game->state = GSTATE_GAME_OVER;
+            }
+        }
+        break;
+    case GSTATE_OVER:
+        // TODO: Play fade out keyhole. And show yellow (?) GAME OVER banner
+        //       on black screen.
+        if (key == SDLK_q) {
+            exit(0);
+        }
+        break;
     case GSTATE_START:
         if (game->keyhole < KH_MAX_RADIUS) {
             game->keyhole += KH_SPEED;
@@ -487,6 +545,8 @@ void game_tick(struct game *game, int key)
         detect_collision(game);
         break;
     }
+
+    // TODO: Make game_render() static and call it here instead of main.c?
 }
 
 void game_destroy(struct game *game)
