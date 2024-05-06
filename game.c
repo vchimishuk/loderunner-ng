@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include "animation.h"
 #include "exit.h"
+#include "gold.h"
 #include "tile.h"
 #include "game.h"
 #include "keyhole.h"
@@ -106,6 +107,17 @@ static struct sprite **text_sprites_init(char *s)
 static bool is_tile(struct game *game, int x, int y, enum map_tile_t t)
 {
     return game->map[y][x]->curt == t;
+}
+
+static bool is_gold(struct game *g, int x, int y)
+{
+    for (int i = 0; i < g->ngold; i++) {
+        if (g->gold[i]->visible && g->gold[i]->x == x && g->gold[i]->y == y) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static bool can_move(struct game *game, int x, int y)
@@ -268,9 +280,12 @@ static void runner_tick(struct game *game, int key)
             }
             break;
         case SDLK_x:
-            // Dig only bricks with empty space above.
+            // TODO: Do not dig if guard is too close.
+
+            // Dig only bricks with empty gold-free space above.
             if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
-                && is_tile(game, x + 1, y, MAP_TILE_EMPTY)) {
+                && is_tile(game, x + 1, y, MAP_TILE_EMPTY)
+                && !is_gold(game, x + 1, y)) {
 
                 runner->tx = 0;
                 game->map[runner->y + 1][runner->x + 1]->cura = NULL;
@@ -284,7 +299,8 @@ static void runner_tick(struct game *game, int key)
         case SDLK_z:
             // Dig only bricks with empty space above.
             if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
-                && is_tile(game, x - 1, y, MAP_TILE_EMPTY)) {
+                && is_tile(game, x - 1, y, MAP_TILE_EMPTY)
+                && !is_gold(game, x - 1, y)) {
 
                 runner->tx = 0;
                 game->map[runner->y + 1][runner->x - 1]->cura = NULL;
@@ -391,7 +407,7 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     game->info_score = NULL;
     game->info_lives = NULL;
     game->info_level = NULL;
-
+    game->ngold = 0;
     game->runner = runner_init();
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -402,28 +418,26 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                     ANIMATION_BRICK, i, j);
                 break;
             case MAP_TILE_EMPTY:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
-                    0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
                 break;
             case MAP_TILE_FALSE:
                 // TODO:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
-                    0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
                 break;
             case MAP_TILE_GOLD:
-                // TODO:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
-                    0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                if (game->ngold >= MAX_GOLD) {
+                    die("gold limit exceeded");
+                }
+                game->gold[game->ngold++] = gold_init(j, i);
                 break;
             case MAP_TILE_GUARD:
                 // TODO:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
-                    0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
                 break;
             case MAP_TILE_HLADDER:
                 // TODO:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
-                    0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
                 break;
             case MAP_TILE_LADDER:
                 game->map[i][j] = map_tile_init(MAP_TILE_LADDER,
@@ -434,8 +448,7 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                     ANIMATION_ROPE, i, j);
                 break;
             case MAP_TILE_RUNNER:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
-                    0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
                 game->runner->sx = j;
                 game->runner->sy = i;
                 runner_reset(game->runner);
@@ -465,6 +478,8 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     return game;
 }
 
+// TODO: 1. Pick up gold when on the middle of the tile.
+//       2. Do not dig under gold.
 void game_render(struct game *game, SDL_Renderer *renderer)
 {
     for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -473,6 +488,14 @@ void game_render(struct game *game, SDL_Renderer *renderer)
             if (t != NULL && t->cura != NULL) {
                 render(renderer, *(t->cura->cur), t->x, t->y);
             }
+        }
+    }
+
+    for (int i = 0; i < game->ngold; i++) {
+        struct gold *g = game->gold[i];
+        if (g->visible) {
+            render(renderer, *(g->animation->cur),
+                g->x * TILE_MAP_WIDTH, g->y * TILE_MAP_HEIGHT);
         }
     }
 
@@ -525,7 +548,7 @@ void game_tick(struct game *game, int key)
             }
         }
         break;
-    case GSTATE_OVER:
+    case GSTATE_GAME_OVER:
         // TODO: Play fade out keyhole. And show yellow (?) GAME OVER banner
         //       on black screen.
         if (key == SDLK_q) {
@@ -552,5 +575,6 @@ void game_tick(struct game *game, int key)
 void game_destroy(struct game *game)
 {
     // TODO: Free map.
+    // TODO: Free gold.
     free(game);
 }

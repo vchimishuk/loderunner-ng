@@ -4,6 +4,8 @@
 #include "level.h"
 // #include "tile.h"
 
+#define MAX_GOLD 16
+
 /*
  * Game map single tile representation.
  */
@@ -67,6 +69,8 @@ struct game {
     struct sprite **info_lives;
     struct sprite **info_level;
     struct runner *runner;
+    struct gold *gold[MAX_GOLD];
+    int ngold;
 };
 
 struct game *game_init(SDL_Renderer *renderer, struct level *lvl);

@@ -25,6 +25,7 @@ add_executable(loderunner
                    animation.c
                    exit.c
                    game.c
+                   gold.c
                    keyhole.c
                    level.c
                    main.c

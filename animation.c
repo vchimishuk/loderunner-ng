@@ -118,6 +118,12 @@ struct animation *animation_init(enum animation_t t)
         a->sprites[0] = runner_sprite_init(8);
         a->sprites[1] = NULL;
         break;
+    case ANIMATION_GOLD:
+        a->sprites = sprites_init(2);
+        a->sprites[0] = animation_sprite_init(TEXTURE_GOLD, 0, 0,
+            TILE_MAP_WIDTH, TILE_MAP_HEIGHT);
+        a->sprites[1] = NULL;
+        break;
     case ANIMATION_GROUND:
         a->sprites = sprites_init(2);
         a->sprites[0] = animation_sprite_init(TEXTURE_GROUND, 0, 0,

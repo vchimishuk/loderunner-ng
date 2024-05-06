@@ -13,6 +13,7 @@ enum animation_t {
     ANIMATION_DIG_RIGHT,
     ANIMATION_FALL_LEFT,
     ANIMATION_FALL_RIGHT,
+    ANIMATION_GOLD,
     ANIMATION_GROUND,
     ANIMATION_HOLE_FILL,
     ANIMATION_HOLE_LEFT,
@@ -43,5 +44,6 @@ struct sprite *animation_sprite_init(enum texture tx, int x, int y,
 struct animation *animation_init(enum animation_t t);
 bool animation_tick(struct animation *a);
 void animation_reset(struct animation *a);
+// TODO: animation_destroy();
 
 #endif /* ANIMATION_H_ */
