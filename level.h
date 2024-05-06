@@ -18,6 +18,7 @@ enum map_tile_t {
 };
 
 struct level {
+    int num;
     enum map_tile_t map[MAP_HEIGHT][MAP_WIDTH];
 };
 

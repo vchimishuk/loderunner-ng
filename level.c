@@ -30,6 +30,7 @@ static const char *TILE_CHARS = "# $0SH-&@X";
  * Load level from file.
  * It is caller's responsibility to free returned object.
  */
+// TODO: Rename to init_level();
 struct level *load_level(int n)
 {
     char buf[4];
@@ -41,6 +42,7 @@ struct level *load_level(int n)
     }
 
     struct level *lvl = xmalloc(sizeof(struct level));
+    lvl->num = n;
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
         char c;

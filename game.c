@@ -109,15 +109,17 @@ static bool is_tile(struct game *game, int x, int y, enum map_tile_t t)
     return game->map[y][x]->curt == t;
 }
 
-static bool is_gold(struct game *g, int x, int y)
+static struct gold *gold(struct game *g, int x, int y)
 {
     for (int i = 0; i < g->ngold; i++) {
-        if (g->gold[i]->visible && g->gold[i]->x == x && g->gold[i]->y == y) {
-            return true;
+        struct gold *gl = g->gold[i];
+
+        if (gl->visible && gl->x == x && gl->y == y) {
+            return gl;
         }
     }
 
-    return false;
+    return NULL;
 }
 
 static bool can_move(struct game *game, int x, int y)
@@ -285,7 +287,7 @@ static void runner_tick(struct game *game, int key)
             // Dig only bricks with empty gold-free space above.
             if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
                 && is_tile(game, x + 1, y, MAP_TILE_EMPTY)
-                && !is_gold(game, x + 1, y)) {
+                && gold(game, x + 1, y) == NULL) {
 
                 runner->tx = 0;
                 game->map[runner->y + 1][runner->x + 1]->cura = NULL;
@@ -300,7 +302,7 @@ static void runner_tick(struct game *game, int key)
             // Dig only bricks with empty space above.
             if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
                 && is_tile(game, x - 1, y, MAP_TILE_EMPTY)
-                && !is_gold(game, x - 1, y)) {
+                && gold(game, x - 1, y) == NULL) {
 
                 runner->tx = 0;
                 game->map[runner->y + 1][runner->x - 1]->cura = NULL;
@@ -346,19 +348,56 @@ static void map_tick(struct game *game)
     }
 }
 
+static void open_hladder(struct game *g)
+{
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            if (g->lvl->map[i][j] == MAP_TILE_HLADDER) {
+                // TODO: Free empty tile g->map[i][j].
+                g->map[i][j] = map_tile_init(MAP_TILE_LADDER,
+                    ANIMATION_LADDER, i, j);
+            }
+        }
+    }
+}
+
 /*
  * Check game state for collisions: runner or guard death.
  * TODO: Gold picking up or lossing here?
  */
 static void detect_collision(struct game *game)
 {
-    // Runner is walled up in the wall.
     // TODO: Also check runner-guard collision here.
-    int rx = game->runner->x;
-    int ry = game->runner->y;
-    if (is_tile(game, rx, ry, MAP_TILE_BRICK)) {
+    struct runner *r = game->runner;
+
+    // Runner picks up gold.
+    struct gold *g = gold(game, r->x, r->y);
+    if (g != NULL
+        && abs(0 - r->tx) <= TILE_MAP_WIDTH / 4
+        && abs(0 - r->ty) <= TILE_MAP_HEIGHT / 4) {
+
+        g->visible = false;
+        r->ngold++;
+
+        // All gold have been picked up. Show hidden ladders
+        // and let the runner finish current game.
+        if (game->ngold == r->ngold) {
+            open_hladder(game);
+        }
+    }
+
+    // Runner is walled up in a wall.
+    if (is_tile(game, r->x, r->y, MAP_TILE_BRICK)) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
+    }
+
+    // Runner has reached top of the screen.
+    if (r->y == 0 && (abs(0 - r->ty) <= TILE_MAP_HEIGHT / 4)
+        && game->ngold == r->ngold) {
+
+        game->won = true;
+        game->state = GSTATE_END;
     }
 }
 
@@ -408,6 +447,7 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     game->info_lives = NULL;
     game->info_level = NULL;
     game->ngold = 0;
+    game->won = false;
     game->runner = runner_init();
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -467,14 +507,6 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
         game->ground[i] = ground_tile_init(i);
     }
 
-    char buf[16];
-    snprintf(buf, 16, "SCORE%07d", 5);
-    game->info_score = text_sprites_init(buf);
-    /* snprintf(buf, 16, " MEN%03d", 5); */
-    /* game->info_life = text_sprites_init(buf); */
-    snprintf(buf, 16, " LEVEL%03d", 5);
-    game->info_level = text_sprites_init(buf);
-
     return game;
 }
 
@@ -508,6 +540,12 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 
     int col = 0;
     int yinfo = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
+    if (game->info_score == NULL) {
+        char buf[16];
+        snprintf(buf, 16, "SCORE%07d", 100500);
+        game->info_score = text_sprites_init(buf);
+
+    }
     for (int i = 0; game->info_score[i] != NULL; i++, col++) {
         render(renderer, game->info_score[i], col * TILE_TEXT_WIDTH, yinfo);
     }
@@ -519,6 +557,11 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     for (int i = 0; game->info_lives[i] != NULL; i++, col++) {
         render(renderer, game->info_lives[i], col * TILE_TEXT_WIDTH, yinfo);
     }
+    if (game->info_level == NULL) {
+        char buf[16];
+        snprintf(buf, 16, " LEVEL%03d", game->lvl->num);
+        game->info_level = text_sprites_init(buf);
+    }
     for (int i = 0; game->info_level[i] != NULL; i++, col++) {
         render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, yinfo);
     }
@@ -528,31 +571,29 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     }
 }
 
-void game_tick(struct game *game, int key)
+/*
+ * Game tick function where all gameplay logic is happening. Called with
+ * a frame rate speed.
+ * Returns ture if game is finished. Game result is stored in `game->won`
+ * flag.
+ */
+bool game_tick(struct game *game, int key)
 {
     switch (game->state) {
     case GSTATE_END:
         if (game->keyhole > 0) {
             game->keyhole -= KH_SPEED;
+        } else if (game->won) {
+            return true;
         } else {
-            // TODO: Decrement lives. If lives become 0 show GAME OVER banner.
-            //       If levels is non-zero play double-keyhole animation and
-            //       start level again.
             game->lives--;
             game->info_lives = NULL; // TODO: Free memory / reset.
             if (game->lives > 0) {
                 game_reset(game);
                 game->state = GSTATE_START;
             } else {
-                game->state = GSTATE_GAME_OVER;
+                return true;
             }
-        }
-        break;
-    case GSTATE_GAME_OVER:
-        // TODO: Play fade out keyhole. And show yellow (?) GAME OVER banner
-        //       on black screen.
-        if (key == SDLK_q) {
-            exit(0);
         }
         break;
     case GSTATE_START:
@@ -570,6 +611,8 @@ void game_tick(struct game *game, int key)
     }
 
     // TODO: Make game_render() static and call it here instead of main.c?
+
+    return false;
 }
 
 void game_destroy(struct game *game)

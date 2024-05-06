@@ -53,9 +53,6 @@ int main()
     texture_init(renderer);
 
     struct level *lvl = load_level(1);
-    /* print_level(lvl); */
-    /* free(lvl); */
-    /* exit(0); */
     struct game *game = game_init(renderer, lvl);
 
     /* struct tile_text *t = xmalloc(sizeof(struct tile_text)); */
@@ -109,11 +106,25 @@ int main()
         }
 
         SDL_RenderClear(renderer);
-        game_tick(game, key);
-        game_render(game, renderer);
-        // blit(renderer, brick, 100, 100);
-        /* render_tile_text(renderer, t); */
-        SDL_RenderPresent(renderer);
+        if (game_tick(game, key)) {
+            if (game->won) {
+                // TODO: Handle last level situation.
+                int l = lvl->num + 1;
+
+                game_destroy(game);
+                // TODO: Free current level. destroy_level(lvl);
+                lvl = load_level(l);
+                game = game_init(renderer, lvl);
+            } else {
+                // TODO: Display GAME OVER banner, get back to start screen.
+                die("GAME OVER");
+            }
+        } else {
+            game_render(game, renderer);
+            // blit(renderer, brick, 100, 100);
+            /* render_tile_text(renderer, t); */
+            SDL_RenderPresent(renderer);
+        }
 
         // TODO: Calculate delay depends on how much we spent
         //       in gaming logic and rendering.

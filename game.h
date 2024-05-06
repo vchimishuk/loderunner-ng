@@ -2,7 +2,7 @@
 #define GAME_H_
 
 #include "level.h"
-// #include "tile.h"
+#include "stdbool.h"
 
 #define MAX_GOLD 16
 
@@ -42,9 +42,6 @@ enum game_state {
     // Runner is dead or reached end of the current leve. Keyhole animation
     // is shown.
     GSTATE_END,
-    // Game is over. GAME OVER banner is displayed and the only option is to
-    // quit the game.
-    GSTATE_GAME_OVER,
     // Game is running, user can control runner.
     GSTATE_RUN,
     // Game round is going to start, keyhole is shown or waiting for initial
@@ -71,10 +68,11 @@ struct game {
     struct runner *runner;
     struct gold *gold[MAX_GOLD];
     int ngold;
+    bool won;
 };
 
 struct game *game_init(SDL_Renderer *renderer, struct level *lvl);
-void game_tick(struct game *game, int key);
+bool game_tick(struct game *game, int key);
 void game_render(struct game *game, SDL_Renderer *renderer);
 void game_destroy();
 

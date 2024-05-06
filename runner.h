@@ -56,6 +56,9 @@ struct runner {
     struct animation *cura;
     // Runner state defines is it moving left/right, falling, etc.
     enum runner_state state;
+    // Number of picked up gold items. If this number is equals to the number
+    // in `struct game` game is won.
+    int ngold;
 };
 
 struct runner *runner_init();
