@@ -14,10 +14,11 @@ enum texture {
     TEXTURE_LADDER,
     TEXTURE_ROPE,
     TEXTURE_RUNNER,
-    TEXTURE_SIZE,
     TEXTURE_SOLID,
     TEXTURE_TEXT,
     TEXTURE_TRAP,
+    // Keep it last.
+    TEXTURE_SIZE,
 };
 
 /* struct texture { */

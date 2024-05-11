@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.27)
 project(LodeRunner)
 
+# add_compile_options(-Wall -Wextra -Wpedantic)
+
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2main)
 find_package(SDL2_image REQUIRED CONFIG REQUIRED COMPONENTS SDL2_Image)

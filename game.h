@@ -74,6 +74,6 @@ struct game {
 struct game *game_init(SDL_Renderer *renderer, struct level *lvl);
 bool game_tick(struct game *game, int key);
 void game_render(struct game *game, SDL_Renderer *renderer);
-void game_destroy();
+void game_destroy(struct game *game);
 
 #endif /* GAME_H_ */
