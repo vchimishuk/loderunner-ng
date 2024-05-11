@@ -16,6 +16,7 @@
 #define SCREEN_HEIGHT (MAP_HEIGHT * TILE_MAP_HEIGHT)
 
 #define FPS 23
+#define FRAME_TIME (1000.0 / FPS)
 
 int main()
 {
@@ -63,9 +64,12 @@ int main()
     /* t->w = TILE_TEXT_WIDTH; */
     /* t->h = TILE_TEXT_HEIGHT; */
 
+    double delay = 0;
     SDL_Event event;
     int key = 0;
     for (;;) {
+        unsigned long start = SDL_GetTicks64();
+
         while (SDL_PollEvent(&event)) {
             // printf("e: %d\n", event.type);
             switch (event.type) {
@@ -126,9 +130,13 @@ int main()
             SDL_RenderPresent(renderer);
         }
 
-        // TODO: Calculate delay depends on how much we spent
-        //       in gaming logic and rendering.
-        SDL_Delay(1000 / FPS);
+        double left = FRAME_TIME - (SDL_GetTicks64() - start);
+        if (left > 0) {
+            delay += left;
+            long d = (long) delay;
+            delay -= d;
+            SDL_Delay(d);
+        }
     }
 
     /* game_destroy */
