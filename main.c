@@ -11,12 +11,32 @@
 #include "render.h"
 #include "xmalloc.h"
 
-// TODO: Add ground and status line.
 #define SCREEN_WIDTH (MAP_WIDTH * TILE_MAP_WIDTH)
-#define SCREEN_HEIGHT (MAP_HEIGHT * TILE_MAP_HEIGHT)
+#define SCREEN_HEIGHT (MAP_HEIGHT * TILE_MAP_HEIGHT \
+        + TILE_GROUND_HEIGHT + TILE_TEXT_HEIGHT)
+#define START_BANNER_DELAY 5000
 
 #define FPS 23
 #define FRAME_TIME (1000.0 / FPS)
+
+void render_start_banner(SDL_Renderer *renderer)
+{
+    SDL_Rect src;
+    src.x = 0;
+    src.y = 0;
+    src.w = SCREEN_WIDTH;
+    src.h = SCREEN_HEIGHT;
+    SDL_Rect dst;
+    dst.x = 0;
+    dst.y = 0;
+    dst.w = src.w;
+    dst.h = src.h;
+    SDL_Texture *t = texture_load(renderer, "start.png");
+    if (SDL_RenderCopy(renderer, t, &src, &dst) < 0) {
+        die("failed to render a texture: %s", SDL_GetError());
+    }
+    SDL_DestroyTexture(t);
+}
 
 int main()
 {
@@ -64,8 +84,39 @@ int main()
     /* t->w = TILE_TEXT_WIDTH; */
     /* t->h = TILE_TEXT_HEIGHT; */
 
-    double delay = 0;
     SDL_Event event;
+
+    // Display startup banner.
+    SDL_RenderClear(renderer);
+    render_start_banner(renderer);
+    SDL_RenderPresent(renderer);
+
+    unsigned long banner_start = SDL_GetTicks64();
+
+    for (;;) {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.sym) {
+                case SDLK_q:
+                case SDLK_ESCAPE:
+                    // TODO: Deinitialize SDL and exit gracefuly.
+                    exit(0);
+                default:
+                    goto exit_banner;
+                }
+            }
+        }
+
+        if (SDL_GetTicks64() >= banner_start + START_BANNER_DELAY) {
+            break;
+        }
+        SDL_Delay(FRAME_TIME);
+    }
+exit_banner:
+
+
+    double delay = 0;
     int key = 0;
     for (;;) {
         unsigned long start = SDL_GetTicks64();
@@ -85,6 +136,7 @@ int main()
                     break;
                 case SDLK_q:
                 case SDLK_ESCAPE:
+                    // TODO: Deinit game correctly and free all resources.
                     exit(0);
                     break;
                 }
