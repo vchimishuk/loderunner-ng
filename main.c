@@ -14,28 +14,56 @@
 #define SCREEN_WIDTH (MAP_WIDTH * TILE_MAP_WIDTH)
 #define SCREEN_HEIGHT (MAP_HEIGHT * TILE_MAP_HEIGHT \
         + TILE_GROUND_HEIGHT + TILE_TEXT_HEIGHT)
-#define START_BANNER_DELAY 5000
 
 #define FPS 23
 #define FRAME_TIME (1000.0 / FPS)
 
-void render_start_banner(SDL_Renderer *renderer)
+
+static void render_texture(SDL_Renderer *renderer, char *texture)
 {
+    SDL_Texture *t = texture_load(renderer, texture);
+
     SDL_Rect src;
     src.x = 0;
     src.y = 0;
-    src.w = SCREEN_WIDTH;
-    src.h = SCREEN_HEIGHT;
+    src.w = 0;
+    src.h = 0;
+    SDL_QueryTexture(t, NULL, NULL, &src.w, &src.h);
+
     SDL_Rect dst;
-    dst.x = 0;
-    dst.y = 0;
+    dst.x = (SCREEN_WIDTH - src.w) / 2;
+    dst.y = (SCREEN_HEIGHT - src.h) / 2;
     dst.w = src.w;
     dst.h = src.h;
-    SDL_Texture *t = texture_load(renderer, "start.png");
+
     if (SDL_RenderCopy(renderer, t, &src, &dst) < 0) {
         die("failed to render a texture: %s", SDL_GetError());
     }
+    SDL_RenderPresent(renderer);
     SDL_DestroyTexture(t);
+}
+
+static bool key_wait()
+{
+    for (;;) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+            case SDL_KEYDOWN:
+                switch (event.key.keysym.sym) {
+                case SDLK_q:
+                case SDLK_ESCAPE:
+                    return true;
+                default:
+                    return false;
+                }
+            }
+        }
+
+        SDL_Delay(FRAME_TIME);
+    }
+
+    return false;
 }
 
 int main()
@@ -73,8 +101,6 @@ int main()
 
     texture_init(renderer);
 
-    struct level *lvl = load_level(1);
-    struct game *game = game_init(renderer, lvl);
 
     /* struct tile_text *t = xmalloc(sizeof(struct tile_text)); */
     /* t->texture = texture_get(TEXTURE_TEXT); */
@@ -84,110 +110,103 @@ int main()
     /* t->w = TILE_TEXT_WIDTH; */
     /* t->h = TILE_TEXT_HEIGHT; */
 
-    SDL_Event event;
+    /* SDL_Event event; */
 
-    // Display startup banner.
-    SDL_RenderClear(renderer);
-    render_start_banner(renderer);
-    SDL_RenderPresent(renderer);
-
-    unsigned long banner_start = SDL_GetTicks64();
 
     for (;;) {
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                case SDLK_q:
-                case SDLK_ESCAPE:
-                    // TODO: Deinitialize SDL and exit gracefuly.
-                    exit(0);
-                default:
-                    goto exit_banner;
-                }
-            }
-        }
-
-        if (SDL_GetTicks64() >= banner_start + START_BANNER_DELAY) {
+        SDL_RenderClear(renderer);
+        render_texture(renderer, "start.png");
+        if (key_wait()) {
             break;
         }
-        SDL_Delay(FRAME_TIME);
-    }
-exit_banner:
 
+        struct level *lvl = load_level(1);
+        struct game *game = game_init(renderer, lvl);
+        bool quit = false;
 
-    double delay = 0;
-    int key = 0;
-    for (;;) {
-        unsigned long start = SDL_GetTicks64();
+        double delay = 0;
+        int key = 0;
+        for (;;) {
+            unsigned long start = SDL_GetTicks64();
 
-        while (SDL_PollEvent(&event)) {
-            // printf("e: %d\n", event.type);
-            switch (event.type) {
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                case SDLK_DOWN:
-                case SDLK_LEFT:
-                case SDLK_RIGHT:
-                case SDLK_UP:
-                case SDLK_x:
-                case SDLK_z:
-                    key = event.key.keysym.sym;
-                    break;
-                case SDLK_q:
-                case SDLK_ESCAPE:
-                    // TODO: Deinit game correctly and free all resources.
-                    exit(0);
-                    break;
-                }
-                break;
-            case SDL_KEYUP:
-                switch (event.key.keysym.sym) {
-                case SDLK_DOWN:
-                case SDLK_LEFT:
-                case SDLK_RIGHT:
-                case SDLK_UP:
-                case SDLK_x:
-                case SDLK_z:
-                    if (key == event.key.keysym.sym) {
-                        key = 0;
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                switch (event.type) {
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                    case SDLK_DOWN:
+                    case SDLK_LEFT:
+                    case SDLK_RIGHT:
+                    case SDLK_UP:
+                    case SDLK_x:
+                    case SDLK_z:
+                        key = event.key.keysym.sym;
+                        break;
+                    case SDLK_q:
+                    case SDLK_ESCAPE:
+                        quit = true;
+                        goto eog;
                     }
                     break;
+                case SDL_KEYUP:
+                    switch (event.key.keysym.sym) {
+                    case SDLK_DOWN:
+                    case SDLK_LEFT:
+                    case SDLK_RIGHT:
+                    case SDLK_UP:
+                    case SDLK_x:
+                    case SDLK_z:
+                        if (key == event.key.keysym.sym) {
+                            key = 0;
+                        }
+                        break;
+                    }
+                    break;
+                case SDL_QUIT:
+                    quit = true;
+                    goto eog;
                 }
-                break;
-            case SDL_QUIT:
-                exit(0);
-                break;
             }
-        }
 
-        SDL_RenderClear(renderer);
-        if (game_tick(game, key)) {
-            if (game->won) {
-                // TODO: Handle last level situation.
-                int l = lvl->num + 1;
+            if (game_tick(game, key)) {
+                if (game->won) {
+                    // TODO: Handle last level situation.
+                    //       goto eog;
+                    int l = lvl->num + 1;
 
-                game_destroy(game);
-                // TODO: Free current level. destroy_level(lvl);
-                lvl = load_level(l);
-                game = game_init(renderer, lvl);
+                    game_destroy(game);
+                    // TODO: Free current level. destroy_level(lvl);
+                    lvl = load_level(l);
+                    game = game_init(renderer, lvl);
+                } else {
+                    goto eog;
+                }
             } else {
-                // TODO: Display GAME OVER banner, get back to start screen.
-                die("GAME OVER");
+                SDL_RenderClear(renderer);
+                game_render(game, renderer);
+                // blit(renderer, brick, 100, 100);
+                /* render_tile_text(renderer, t); */
+                SDL_RenderPresent(renderer);
             }
-        } else {
-            game_render(game, renderer);
-            // blit(renderer, brick, 100, 100);
-            /* render_tile_text(renderer, t); */
-            SDL_RenderPresent(renderer);
+
+            double left = FRAME_TIME - (SDL_GetTicks64() - start);
+            if (left > 0) {
+                delay += left;
+                long d = (long) delay;
+                delay -= d;
+                SDL_Delay(d);
+            }
         }
 
-        double left = FRAME_TIME - (SDL_GetTicks64() - start);
-        if (left > 0) {
-            delay += left;
-            long d = (long) delay;
-            delay -= d;
-            SDL_Delay(d);
+    eog:
+        if (quit) {
+            break;
+        }
+        if (!game->won) {
+            render_texture(renderer, "gameover.png");
+        }
+        if (key_wait()) {
+            break;
         }
     }
 
