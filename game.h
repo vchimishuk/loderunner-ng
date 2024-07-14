@@ -33,7 +33,7 @@ struct map_tile {
 };
 
 struct ground_tile {
-    struct sprite *sprite;
+    struct animation *a;
     int x;
     int y;
 };

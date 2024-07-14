@@ -10,17 +10,17 @@ struct runner *runner_init()
     struct runner *r = xmalloc(sizeof(struct runner));
     r->sx = 0;
     r->sy = 0;
-    r->lefta = animation_init(ANIMATION_LEFT);
-    r->righta = animation_init(ANIMATION_RIGHT);
-    r->updowna = animation_init(ANIMATION_UPDOWN);
-    r->climblefta = animation_init(ANIMATION_CLIMB_LEFT);
-    r->climbrighta = animation_init(ANIMATION_CLIMB_RIGHT);
-    r->diglefta = animation_init(ANIMATION_DIG_LEFT);
-    r->digrighta = animation_init(ANIMATION_DIG_RIGHT);
-    r->falllefta = animation_init(ANIMATION_FALL_LEFT);
-    r->fallrighta = animation_init(ANIMATION_FALL_RIGHT);
-    r->holelefta = animation_init(ANIMATION_HOLE_LEFT);
-    r->holerighta = animation_init(ANIMATION_HOLE_RIGHT);
+    r->lefta = animation_init(ANIMATION_RUNNER_LEFT);
+    r->righta = animation_init(ANIMATION_RUNNER_RIGHT);
+    r->updowna = animation_init(ANIMATION_RUNNER_UPDOWN);
+    r->climblefta = animation_init(ANIMATION_RUNNER_CLIMB_LEFT);
+    r->climbrighta = animation_init(ANIMATION_RUNNER_CLIMB_RIGHT);
+    r->diglefta = animation_init(ANIMATION_RUNNER_DIG_LEFT);
+    r->digrighta = animation_init(ANIMATION_RUNNER_DIG_RIGHT);
+    r->falllefta = animation_init(ANIMATION_RUNNER_FALL_LEFT);
+    r->fallrighta = animation_init(ANIMATION_RUNNER_FALL_RIGHT);
+    r->holelefta = animation_init(ANIMATION_RUNNER_HOLE_LEFT);
+    r->holerighta = animation_init(ANIMATION_RUNNER_HOLE_RIGHT);
 
     runner_reset(r);
 

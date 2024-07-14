@@ -45,8 +45,7 @@ static void map_tile_reset(struct map_tile *tile)
 static struct ground_tile *ground_tile_init(int col)
 {
     struct ground_tile *tl = xmalloc(sizeof(struct ground_tile));
-    tl->sprite = animation_sprite_init(TEXTURE_GROUND, 0, 0,
-        TILE_GROUND_WIDTH, TILE_GROUND_HEIGHT);
+    tl->a = animation_init(ANIMATION_GROUND);
     tl->x = col * TILE_GROUND_WIDTH;
     tl->y = MAP_HEIGHT * TILE_MAP_HEIGHT;
 
@@ -535,7 +534,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 
     for (int i = 0; i < MAP_WIDTH; i++) {
         struct ground_tile *t = game->ground[i];
-        render(renderer, t->sprite, t->x, t->y);
+        render(renderer, *(t->a->cur), t->x, t->y);
     }
 
     int col = 0;
