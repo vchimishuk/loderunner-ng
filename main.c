@@ -134,32 +134,18 @@ int main()
                 switch (event.type) {
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
-                    case SDLK_DOWN:
-                    case SDLK_LEFT:
-                    case SDLK_RIGHT:
-                    case SDLK_UP:
-                    case SDLK_x:
-                    case SDLK_z:
-                        key = event.key.keysym.sym;
-                        break;
                     case SDLK_q:
                     case SDLK_ESCAPE:
                         quit = true;
                         goto eog;
+                    default:
+                        key = event.key.keysym.sym;
+                        break;
                     }
                     break;
                 case SDL_KEYUP:
-                    switch (event.key.keysym.sym) {
-                    case SDLK_DOWN:
-                    case SDLK_LEFT:
-                    case SDLK_RIGHT:
-                    case SDLK_UP:
-                    case SDLK_x:
-                    case SDLK_z:
-                        if (key == event.key.keysym.sym) {
-                            key = 0;
-                        }
-                        break;
+                    if (key == event.key.keysym.sym) {
+                        key = 0;
                     }
                     break;
                 case SDL_QUIT:

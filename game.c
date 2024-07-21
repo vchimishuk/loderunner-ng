@@ -206,8 +206,6 @@ static void runner_tick(struct game *game, int key)
             state = RSTATE_STOP;
         }
     } else if (key != 0) {
-        move = true;
-
         switch (key) {
         case SDLK_LEFT:
             tx -= RUNNER_DX;
@@ -224,6 +222,7 @@ static void runner_tick(struct game *game, int key)
                 } else {
                     state = RSTATE_LEFT;
                 }
+                move = true;
             }
             break;
         case SDLK_RIGHT:
@@ -241,6 +240,7 @@ static void runner_tick(struct game *game, int key)
                 } else {
                     state = RSTATE_RIGHT;
                 }
+                move = true;
             }
             break;
         case SDLK_UP:
@@ -255,6 +255,7 @@ static void runner_tick(struct game *game, int key)
                 move = false;
             } else {
                 state = RSTATE_UPDOWN;
+                move = true;
             }
             break;
         case SDLK_DOWN:
@@ -278,6 +279,7 @@ static void runner_tick(struct game *game, int key)
                 } else {
                     state = RSTATE_UPDOWN;
                 }
+                move = true;
             }
             break;
         case SDLK_x:
@@ -293,6 +295,7 @@ static void runner_tick(struct game *game, int key)
                 game->map[runner->y + 1][runner->x + 1]->curt = MAP_TILE_EMPTY;
                 state = RSTATE_DIG_RIGHT;
                 animation_reset(runner->holerighta);
+                move = true;
             } else {
                 move = false;
             }
@@ -308,6 +311,7 @@ static void runner_tick(struct game *game, int key)
                 game->map[runner->y + 1][runner->x - 1]->curt = MAP_TILE_EMPTY;
                 state = RSTATE_DIG_LEFT;
                 animation_reset(runner->holelefta);
+                move = true;
             } else {
                 move = false;
             }
@@ -581,7 +585,11 @@ bool game_tick(struct game *game, int key)
     switch (game->state) {
     case GSTATE_END:
         if (game->keyhole > 0) {
-            game->keyhole -= KH_SPEED;
+            if (key != 0) {
+                game->keyhole = 0;
+            } else {
+                game->keyhole -= KH_SPEED;
+            }
         } else if (game->won) {
             return true;
         } else {
@@ -597,7 +605,11 @@ bool game_tick(struct game *game, int key)
         break;
     case GSTATE_START:
         if (game->keyhole < KH_MAX_RADIUS) {
-            game->keyhole += KH_SPEED;
+            if (key != 0) {
+                game->keyhole = KH_MAX_RADIUS;
+            } else {
+                game->keyhole += KH_SPEED;
+            }
         } else if (key != 0) {
             game->state = GSTATE_RUN;
         }
