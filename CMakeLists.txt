@@ -11,15 +11,17 @@ include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 
 add_executable(loderunner
+                   ai.c
                    animation.c
                    exit.c
                    game.c
                    gold.c
+                   guard.c
                    keyhole.c
                    level.c
                    main.c
-                   main.c
                    path.c
+                   phys.c
                    render.c
                    runner.c
                    texture.c

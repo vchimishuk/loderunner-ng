@@ -1,16 +1,21 @@
 #include <SDL2/SDL.h>
+#include "ai.h"
 #include "animation.h"
 #include "exit.h"
-#include "gold.h"
-#include "tile.h"
 #include "game.h"
+#include "gold.h"
+#include "guard.h"
 #include "keyhole.h"
 #include "level.h"
+#include "phys.h"
 #include "render.h"
 #include "runner.h"
 #include "texture.h"
+#include "tile.h"
 #include "xmalloc.h"
 
+// TODO: Rename to something like MOVE_DX/MOVE_DY.
+//       Move into the place it can be included by ai.h too?
 #define RUNNER_DX 8
 #define RUNNER_DY 9
 
@@ -103,11 +108,6 @@ static struct sprite **text_sprites_init(char *s)
     return sprites;
 }
 
-static bool is_tile(struct game *game, int x, int y, enum map_tile_t t)
-{
-    return game->map[y][x]->curt == t;
-}
-
 static struct gold *gold(struct game *g, int x, int y)
 {
     for (int i = 0; i < g->ngold; i++) {
@@ -119,17 +119,6 @@ static struct gold *gold(struct game *g, int x, int y)
     }
 
     return NULL;
-}
-
-static bool can_move(struct game *game, int x, int y)
-{
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) {
-        return false;
-    }
-
-    return is_tile(game, x, y, MAP_TILE_EMPTY)
-        || is_tile(game, x, y, MAP_TILE_LADDER)
-        || is_tile(game, x, y, MAP_TILE_ROPE);
 }
 
 // TODO: Check correct usage.
@@ -404,11 +393,8 @@ static void detect_collision(struct game *game)
     }
 }
 
-// TODO: Do we need to pass game or runner struct can be enough?
-static void runner_render(SDL_Renderer *renderer, struct game *game)
+static void runner_render(SDL_Renderer *renderer, struct runner *runner)
 {
-    struct runner *runner = game->runner;
-
     render(renderer, *(runner->cura->cur),
             runner->x * TILE_MAP_WIDTH + runner->tx,
             runner->y * TILE_MAP_HEIGHT + runner->ty);
@@ -423,6 +409,14 @@ static void runner_render(SDL_Renderer *renderer, struct game *game)
             (runner->x + 1) * TILE_MAP_WIDTH,
             (runner->y) * TILE_MAP_HEIGHT);
     }
+}
+
+static void guard_render(SDL_Renderer *renderer, struct guard *g)
+{
+    // TODO: Check if it is alive and such.
+    render(renderer, *(g->cura->cur),
+            g->x * TILE_MAP_WIDTH + g->tx,
+            g->y * TILE_MAP_HEIGHT + g->ty);
 }
 
 static void game_reset(struct game *game)
@@ -445,13 +439,15 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     game->state = GSTATE_START;
     game->keyhole = 0;
     game->lvl = lvl;
-    game->lives = 5;
+    game->lives = 1;
     game->info_score = NULL;
     game->info_lives = NULL;
     game->info_level = NULL;
     game->ngold = 0;
     game->won = false;
     game->runner = runner_init();
+    game->guards = xmalloc(sizeof(struct guard *) * MAX_GUARDS);
+    game->nguards = 0;
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
         for (int j = 0; j < MAP_WIDTH; j++) {
@@ -475,8 +471,17 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                 game->gold[game->ngold++] = gold_init(j, i);
                 break;
             case MAP_TILE_GUARD:
-                // TODO:
                 game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+
+                struct guard *g = guard_init();
+                g->x = j;
+                g->y = i;
+
+                game->nguards++;
+                if (game->nguards > MAX_GUARDS) {
+                    die("guard limit exceeded");
+                }
+                game->guards[game->nguards - 1] = g;
                 break;
             case MAP_TILE_HLADDER:
                 // TODO:
@@ -513,8 +518,6 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     return game;
 }
 
-// TODO: 1. Pick up gold when on the middle of the tile.
-//       2. Do not dig under gold.
 void game_render(struct game *game, SDL_Renderer *renderer)
 {
     for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -534,7 +537,11 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         }
     }
 
-    runner_render(renderer, game);
+    runner_render(renderer, game->runner);
+
+    for (int i = 0; i < game->nguards; i++) {
+        guard_render(renderer, game->guards[i]);
+    }
 
     for (int i = 0; i < MAP_WIDTH; i++) {
         struct ground_tile *t = game->ground[i];
@@ -617,6 +624,7 @@ bool game_tick(struct game *game, int key)
     case GSTATE_RUN:
         map_tick(game);
         runner_tick(game, key);
+        ai_tick(game);
         detect_collision(game);
         break;
     }

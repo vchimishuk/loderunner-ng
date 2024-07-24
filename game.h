@@ -1,10 +1,14 @@
 #ifndef GAME_H_
 #define GAME_H_
 
+#include <stdbool.h>
+#include <SDL2/SDL.h>
+#include "guard.h"
 #include "level.h"
-#include "stdbool.h"
+#include "runner.h"
 
 #define MAX_GOLD 16
+#define MAX_GUARDS 8
 
 /*
  * Game map single tile representation.
@@ -66,6 +70,8 @@ struct game {
     struct sprite **info_lives;
     struct sprite **info_level;
     struct runner *runner;
+    struct guard **guards;
+    int nguards;
     struct gold *gold[MAX_GOLD];
     int ngold;
     bool won;

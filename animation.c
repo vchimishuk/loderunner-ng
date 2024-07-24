@@ -36,6 +36,17 @@ static struct sprite *runner_sprite_init(int n, int frames)
         frames);
 }
 
+static struct sprite *guard_sprite_init(int n, int frames)
+{
+    int r = n / 9;
+    int c = n % 9;
+
+    return animation_sprite_init(TEXTURE_GUARD,
+        c * TILE_MAP_WIDTH, r * TILE_MAP_HEIGHT,
+        TILE_MAP_WIDTH, TILE_MAP_HEIGHT,
+        frames);
+}
+
 static struct sprite *hole_sprite_init(int n, bool tall, int frames)
 {
     int r = n / 9;
@@ -71,6 +82,38 @@ struct animation *animation_init(enum animation_t t)
         a->sprites[0] = animation_sprite_init(TEXTURE_GROUND, 0, 0,
             TILE_GROUND_WIDTH, TILE_GROUND_HEIGHT, 1);
         a->sprites[1] = NULL;
+        break;
+    case ANIMATION_GUARD_CLIMB_LEFT:
+        // TODO:
+        break;
+    case ANIMATION_GUARD_CLIMB_RIGHT:
+        // TODO:
+        break;
+    case ANIMATION_GUARD_FALL_LEFT:
+        // TODO:
+        break;
+    case ANIMATION_GUARD_FALL_RIGHT:
+        // TODO:
+        break;
+    case ANIMATION_GUARD_LEFT:
+        a->sprites = sprites_init(4);
+        a->sprites[0] = guard_sprite_init(3, 2);
+        a->sprites[1] = guard_sprite_init(4, 2);
+        a->sprites[2] = guard_sprite_init(5, 2);
+        a->sprites[3] = NULL;
+        break;
+    case ANIMATION_GUARD_RIGHT:
+        a->sprites = sprites_init(4);
+        a->sprites[0] = guard_sprite_init(0, 2);
+        a->sprites[1] = guard_sprite_init(1, 2);
+        a->sprites[2] = guard_sprite_init(2, 2);
+        a->sprites[3] = NULL;
+        break;
+    case ANIMATION_GUARD_UPDOWN:
+        a->sprites = sprites_init(3);
+        a->sprites[0] = guard_sprite_init(6, 1);
+        a->sprites[1] = guard_sprite_init(7, 1);
+        a->sprites[2] = NULL;
         break;
     case ANIMATION_HOLE_FILL:
         a->sprites = sprites_init(5);

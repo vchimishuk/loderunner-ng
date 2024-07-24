@@ -37,8 +37,7 @@ void runner_reset(struct runner *r)
     r->state = RSTATE_RIGHT;
 }
 
-struct animation *runner_state_animation(struct runner *r,
-    enum runner_state s)
+struct animation *runner_state_animation(struct runner *r, enum runner_state s)
 {
     switch (s) {
     case RSTATE_DIG_LEFT:
