@@ -109,10 +109,13 @@ static enum dir ai_same_level_dir(struct game *game, struct guard *guard)
 
 // Scan downward direction.
 // See also ai_scan_up() implementation.
-static int ai_scan_down(struct game *game, struct guard *guard)
+static int ai_scan_down(struct game *game, int x, int y)
 {
-    int x = guard->x;
-    int y = guard->y;
+    // Return "no route" if cannot move down.
+    if (y < MAP_HEIGHT && !is_tile(game, x, y, MAP_TILE_BRICK)
+        && !is_tile(game, x, y, MAP_TILE_SOLID)) {
+        return RATING_MAX;
+    }
 
     // Until we haven't reached the ground.
     while (y < MAP_HEIGHT && !is_tile(game, x, y, MAP_TILE_BRICK)
@@ -161,22 +164,11 @@ static int ai_scan_down(struct game *game, struct guard *guard)
     }
 }
 
-// Scan direction to the left.
-// ...
-static int ai_scan_left(struct game *game, struct guard *guard)
-{
-    // TODO:
-    return RATING_MAX;
-}
-
 // Scan upward direction.
 // Our main goal here is to move above the runner. The first level above
 // the runner we can reach going up wins.
-static int ai_scan_up(struct game *game, struct guard *guard)
+static int ai_scan_up(struct game *game, int x, int y)
 {
-    int x = guard->x;
-    int y = guard->y;
-
     // We cannot move up without ladder for sure.
     if (!is_tile(game, x, y, MAP_TILE_LADDER)) {
         return RATING_MAX;
@@ -223,9 +215,66 @@ static int ai_scan_up(struct game *game, struct guard *guard)
     }
 }
 
+// Scan direction to the left.
+// Looking left we execute up and down scan for the every step we can perform
+// left. Up and down branches are ranged by rating, more distant route wins
+// between two routes with the same rating.
+static int ai_scan_left(struct game *game, int x, int y)
+{
+    int rating = RATING_MAX;
+
+    while (x > 0) {
+        if (is_tile(game, x - 1, y, MAP_TILE_BRICK)
+            || is_tile(game, x - 1, y, MAP_TILE_SOLID)) {
+            // We have reached a wall.
+            break;
+        }
+
+        // Can climb left despite what is under the feet.
+        bool climb = is_tile(game, x - 1, y, MAP_TILE_LADDER)
+            || is_tile(game, x - 1, y, MAP_TILE_ROPE);
+        // Can walk over the solid ground.
+        bool walk = (y < MAP_HEIGHT - 1)
+            && (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
+                || is_tile(game, x - 1, y + 1, MAP_TILE_SOLID)
+                || is_tile(game, x - 1, y + 1, MAP_TILE_LADDER));
+        // Reached the bottom of the map so can walk on its edge.
+        bool ground = (y == MAP_HEIGHT - 1);
+
+        x--;
+
+        // Usually of the two routes with the same rating the first traced wins
+        // but for right and left tracing original code uses another strategy.
+        // It traces starting from the farthest point and moves to the runner.
+        // Since I start from the runner and move left we need this rating
+        // comparison inversion.
+        // Again, I'm not this is really matters because after runner moves
+        // using this route it will be recalculated and up/down lookup goes
+        // first. As a result, probably, this can be simplified.
+        int r = ai_scan_down(game, x, y);
+        int q = ai_scan_up(game, x, y);
+        if (q < r) {
+            r = q;
+        }
+        if (r <= rating) {
+            rating = r;
+        }
+
+        if (!climb && !walk && !ground) {
+            // Falling down.
+            // For me it looks like this complex check be replaced with
+            // a simple falling down check. Strange that the original code
+            // doesn't do that. Am I missing something?
+            break;
+        }
+    }
+
+    return rating;
+}
+
 // Scan direction to the right.
 // ...
-static int ai_scan_right(struct game *game, struct guard *guard)
+static int ai_scan_right(struct game *game, int x, int y)
 {
     // TODO:
     return RATING_MAX;
@@ -249,11 +298,14 @@ static int ai_scan_right(struct game *game, struct guard *guard)
 //  * Trace down path: either guard can freefall or climb using a ladder.
 //    Every time try to turn left or right as close to the runner's level as
 //    possible.
-//  * ...
-//  * Trace up path. The same logic as tracing down actually.
-//  * ...
-static enum dir ai_guard_dir(struct game *game, struct guard *guard)
+//  * Trace up path: the same logic as tracing down actually.
+//  * Trace left path: scan down and up for every step we can perform
+//    moving left.
+//  * Trace right path: the same logic as tracing left actually.
+static enum dir ai_scan(struct game *game, struct guard *guard)
 {
+    // TODO: Handle falling down situation here?
+
     // Move towards the runner on the same level if we can.
     enum dir d = ai_same_level_dir(game, guard);
     if (d != DIR_NONE) {
@@ -261,32 +313,29 @@ static enum dir ai_guard_dir(struct game *game, struct guard *guard)
     }
 
     int score = RATING_MAX;
-    int s = ai_scan_down(game, guard);
+    int s = ai_scan_down(game, guard->x, guard->y);
     if (s < score) {
         score = s;
         d = DIR_DOWN;
     }
-    s = ai_scan_left(game, guard);
-    if (s < score) {
-        score = s;
-        d = DIR_LEFT;
-    }
-    s = ai_scan_up(game, guard);
+    s = ai_scan_up(game, guard->x, guard->y);
     if (s < score) {
         score = s;
         d = DIR_UP;
     }
-    s = ai_scan_right(game, guard);
+    s = ai_scan_left(game, guard->x, guard->y);
+    if (s < score) {
+        score = s;
+        d = DIR_LEFT;
+    }
+    s = ai_scan_right(game, guard->x, guard->y);
     if (s < score) {
         score = s;
         d = DIR_RIGHT;
     }
 
-    printf("d: %d\n", d);
-
     return d;
 }
-
 
 // Make guard to make a single step in the calculated direction if we can.
 static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
@@ -424,7 +473,7 @@ void ai_tick(struct game *game)
         //     continue;
         // }
 
-        enum dir d = ai_guard_dir(game, g);
+        enum dir d = ai_scan(game, g);
         ai_move_guard(game, g, d);
     }
 }
