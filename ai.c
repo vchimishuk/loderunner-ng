@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "ai.h"
 #include "exit.h"
 #include "guard.h"
@@ -47,7 +48,7 @@ enum dir {
 
 // If guard and the runner on the same level (map row) guard moves
 // directly toward the runner.
-static enum dir ai_same_level_dir(struct game *game, struct guard *guard)
+static enum dir ai_scan_level(struct game *game, struct guard *guard)
 {
     int rx = game->runner->x;
     int ry = game->runner->y;
@@ -109,11 +110,12 @@ static enum dir ai_same_level_dir(struct game *game, struct guard *guard)
 
 // Scan downward direction.
 // See also ai_scan_up() implementation.
-static int ai_scan_down(struct game *game, int x, int y)
+static int ai_scan_down(struct game *game, int x, int y, int startx)
 {
     // Return "no route" if cannot move down.
-    if (y < MAP_HEIGHT && !is_tile(game, x, y, MAP_TILE_BRICK)
-        && !is_tile(game, x, y, MAP_TILE_SOLID)) {
+    if (y < MAP_HEIGHT - 1
+        && (is_tile(game, x, y + 1, MAP_TILE_BRICK)
+            || is_tile(game, x, y + 1, MAP_TILE_SOLID))) {
         return RATING_MAX;
     }
 
@@ -155,8 +157,7 @@ static int ai_scan_down(struct game *game, int x, int y)
     }
 
     if (y == game->runner->y) {
-        // TODO: curRating = Math.abs(startX - x);
-        return 0;
+        return abs(startx - x);
     } else if (y > game->runner->y) {
         return RATING_BASE_BELLOW + (y - game->runner->y);
     } else {
@@ -167,7 +168,7 @@ static int ai_scan_down(struct game *game, int x, int y)
 // Scan upward direction.
 // Our main goal here is to move above the runner. The first level above
 // the runner we can reach going up wins.
-static int ai_scan_up(struct game *game, int x, int y)
+static int ai_scan_up(struct game *game, int x, int y, int startx)
 {
     // We cannot move up without ladder for sure.
     if (!is_tile(game, x, y, MAP_TILE_LADDER)) {
@@ -206,8 +207,7 @@ static int ai_scan_up(struct game *game, int x, int y)
     }
 
     if (y == game->runner->y) {
-        // TODO: Support `curRating = Math.abs(startX - x);`
-        return 0;
+        return abs(startx - x);
     } else if (y > game->runner->y) {
         return RATING_BASE_BELLOW + (y - game->runner->y);
     } else {
@@ -215,33 +215,43 @@ static int ai_scan_up(struct game *game, int x, int y)
     }
 }
 
-// Scan direction to the left.
-// Looking left we execute up and down scan for the every step we can perform
-// left. Up and down branches are ranged by rating, more distant route wins
-// between two routes with the same rating.
-static int ai_scan_left(struct game *game, int x, int y)
+// Scan horizontally right or left.
+// Looking horizontally we execute up and down scan for the every step we
+// can perform left or right depends on the `left` flag. Up and down branches
+// are ranged by rating, more distant route wins between two routes with the
+// same rating.
+static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
 {
     int rating = RATING_MAX;
+    int startx = x;
+    int dx = left ? -1 : 1;
 
-    while (x > 0) {
-        if (is_tile(game, x - 1, y, MAP_TILE_BRICK)
-            || is_tile(game, x - 1, y, MAP_TILE_SOLID)) {
+    for (;;) {
+        // Check if we have reached edge of the screen.
+        if (left && x == 0) {
+            break;
+        } else if (!left && x == MAP_WIDTH - 1) {
+            break;
+        }
+
+        if (is_tile(game, x + dx, y, MAP_TILE_BRICK)
+            || is_tile(game, x + dx, y, MAP_TILE_SOLID)) {
             // We have reached a wall.
             break;
         }
 
         // Can climb left despite what is under the feet.
-        bool climb = is_tile(game, x - 1, y, MAP_TILE_LADDER)
-            || is_tile(game, x - 1, y, MAP_TILE_ROPE);
+        bool climb = is_tile(game, x + dx, y, MAP_TILE_LADDER)
+            || is_tile(game, x + dx, y, MAP_TILE_ROPE);
         // Can walk over the solid ground.
         bool walk = (y < MAP_HEIGHT - 1)
-            && (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
-                || is_tile(game, x - 1, y + 1, MAP_TILE_SOLID)
-                || is_tile(game, x - 1, y + 1, MAP_TILE_LADDER));
+            && (is_tile(game, x + dx, y + 1, MAP_TILE_BRICK)
+                || is_tile(game, x + dx, y + 1, MAP_TILE_SOLID)
+                || is_tile(game, x + dx, y + 1, MAP_TILE_LADDER));
         // Reached the bottom of the map so can walk on its edge.
         bool ground = (y == MAP_HEIGHT - 1);
 
-        x--;
+        x += dx;
 
         // Usually of the two routes with the same rating the first traced wins
         // but for right and left tracing original code uses another strategy.
@@ -251,8 +261,8 @@ static int ai_scan_left(struct game *game, int x, int y)
         // Again, I'm not this is really matters because after runner moves
         // using this route it will be recalculated and up/down lookup goes
         // first. As a result, probably, this can be simplified.
-        int r = ai_scan_down(game, x, y);
-        int q = ai_scan_up(game, x, y);
+        int r = ai_scan_down(game, x, y, startx);
+        int q = ai_scan_up(game, x, y, startx);
         if (q < r) {
             r = q;
         }
@@ -270,14 +280,6 @@ static int ai_scan_left(struct game *game, int x, int y)
     }
 
     return rating;
-}
-
-// Scan direction to the right.
-// ...
-static int ai_scan_right(struct game *game, int x, int y)
-{
-    // TODO:
-    return RATING_MAX;
 }
 
 // Guard's AI is completely copied from Simon Hung's LodeRunner TotalRecall
@@ -307,28 +309,28 @@ static enum dir ai_scan(struct game *game, struct guard *guard)
     // TODO: Handle falling down situation here?
 
     // Move towards the runner on the same level if we can.
-    enum dir d = ai_same_level_dir(game, guard);
+    enum dir d = ai_scan_level(game, guard);
     if (d != DIR_NONE) {
         return d;
     }
 
     int score = RATING_MAX;
-    int s = ai_scan_down(game, guard->x, guard->y);
+    int s = ai_scan_down(game, guard->x, guard->y, guard->x);
     if (s < score) {
         score = s;
         d = DIR_DOWN;
     }
-    s = ai_scan_up(game, guard->x, guard->y);
+    s = ai_scan_up(game, guard->x, guard->y, guard->x);
     if (s < score) {
         score = s;
         d = DIR_UP;
     }
-    s = ai_scan_left(game, guard->x, guard->y);
+    s = ai_scan_horizontal(game, guard->x, guard->y, true);
     if (s < score) {
         score = s;
         d = DIR_LEFT;
     }
-    s = ai_scan_right(game, guard->x, guard->y);
+    s = ai_scan_horizontal(game, guard->x, guard->y, false);
     if (s < score) {
         score = s;
         d = DIR_RIGHT;
