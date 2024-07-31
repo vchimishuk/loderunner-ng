@@ -121,8 +121,8 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
     }
 
     // Until we haven't reached the ground.
-    while (y < MAP_HEIGHT && !is_tile(game, x, y, MAP_TILE_BRICK)
-        && !is_tile(game, x, y, MAP_TILE_SOLID)) {
+    while (y < MAP_HEIGHT && !is_tile(game, x, y + 1, MAP_TILE_BRICK)
+        && !is_tile(game, x, y + 1, MAP_TILE_SOLID)) {
         // Try to trace left and right if we can (not in a freefall mode).
         if (!is_tile(game, x, y, MAP_TILE_EMPTY)) {
             // Check if we can turn left.
@@ -143,7 +143,7 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
                 }
             }
             // The same check for right.
-            if (x < MAP_WIDTH) {
+            if (x < MAP_WIDTH - 1) {
                 if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
                     || is_tile(game, x + 1, y + 1, MAP_TILE_SOLID)
                     || is_tile(game, x + 1, y + 1, MAP_TILE_LADDER)
