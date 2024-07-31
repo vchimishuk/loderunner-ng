@@ -40,6 +40,7 @@ static int move_policy[MP_NGUARDS][MP_NMOVES] = {
 // Direction to move the guard to.
 enum dir {
     DIR_DOWN,
+    DIR_FALL,
     DIR_LEFT,
     DIR_NONE,
     DIR_RIGHT,
@@ -282,6 +283,29 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
     return rating;
 }
 
+static bool ai_falling(struct game *game, struct guard *guard)
+{
+    int x = guard->x;
+    int y = guard->y;
+    int ty = guard->ty;
+
+    if (is_tile(game, x, y, MAP_TILE_LADDER)
+        || is_tile(game, x, y, MAP_TILE_LADDER)) {
+        return false;
+    }
+
+    // TODO: Support walking on other guard's head.
+    if (ty < 0
+        || (y < MAP_HEIGHT - 1
+            && !is_tile(game, x, y + 1, MAP_TILE_BRICK)
+            && !is_tile(game, x, y + 1, MAP_TILE_SOLID)
+            && !is_tile(game, x, y + 1, MAP_TILE_LADDER))) {
+        return true;
+    }
+
+    return false;
+}
+
 // Guard's AI is completely copied from Simon Hung's LodeRunner TotalRecall
 // implementation. See https://github.com/SimonHung/LodeRunner_TotalRecall
 // Code understanding was easy with help of great TotalRecall's source code
@@ -306,7 +330,9 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
 //  * Trace right path: the same logic as tracing left actually.
 static enum dir ai_scan(struct game *game, struct guard *guard)
 {
-    // TODO: Handle falling down situation here?
+    if (ai_falling(game, guard)) {
+        return DIR_FALL;
+    }
 
     // Move towards the runner on the same level if we can.
     enum dir d = ai_scan_level(game, guard);
@@ -342,10 +368,6 @@ static enum dir ai_scan(struct game *game, struct guard *guard)
 // Make guard to make a single step in the calculated direction if we can.
 static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
 {
-    if (d == DIR_NONE) {
-        return;
-    }
-
     enum guard_state state = guard->state;
     bool move = false;
     int x = guard->x;
@@ -361,12 +383,11 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             y += 1;
             ty -= TILE_MAP_HEIGHT;
         }
-        if (ty > 0 && !can_move(game, x, y + 1)) {
+        if (ty >= 0 && !can_move(game, x, y + 1)) {
             move = false;
         } else {
             if (is_tile(game, x, y, MAP_TILE_ROPE)
                 && !is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
-
                 if (state == GSTATE_CLIMB_RIGHT) {
                     state = GSTATE_FALL_RIGHT;
                 } else {
@@ -377,6 +398,23 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             }
             move = true;
         }
+        break;
+    case DIR_FALL:
+        ty += MOVE_DY;
+        tx = 0;
+        if (ty > TILE_MAP_HEIGHT / 2) {
+            y += 1;
+            ty -= TILE_MAP_HEIGHT;
+        }
+        if (ty >= 0 && !can_move(game, x, y + 1)) {
+            ty = 0;
+        }
+        if (state == GSTATE_LEFT || state == GSTATE_CLIMB_LEFT) {
+            state = GSTATE_FALL_LEFT;
+        } else if (state == GSTATE_RIGHT || state == GSTATE_CLIMB_RIGHT) {
+            state = GSTATE_FALL_RIGHT;
+        }
+        move = true;
         break;
     case DIR_LEFT:
         tx -= MOVE_DX;
@@ -395,6 +433,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             }
             move = true;
         }
+        break;
+    case DIR_NONE:
         break;
     case DIR_RIGHT:
         tx += MOVE_DX;
@@ -429,7 +469,6 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             move = true;
         }
         break;
-    case DIR_NONE:
     default:
         die("illegal state");
     }

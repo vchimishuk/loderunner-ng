@@ -37,10 +37,10 @@ struct guard *guard_init()
     g->lefta = animation_init(ANIMATION_GUARD_LEFT);
     g->righta = animation_init(ANIMATION_GUARD_RIGHT);
     g->updowna = animation_init(ANIMATION_GUARD_UPDOWN);
-    // g->climblefta = animation_init(ANIMATION_GUARD_CLIMB_LEFT);
-    // g->climbrighta = animation_init(ANIMATION_GUARD_CLIMB_RIGHT);
-    // g->falllefta = animation_init(ANIMATION_GUARD_FALL_LEFT);
-    // g->fallrighta = animation_init(ANIMATION_GUARD_FALL_RIGHT);
+    g->climblefta = animation_init(ANIMATION_GUARD_CLIMB_LEFT);
+    g->climbrighta = animation_init(ANIMATION_GUARD_CLIMB_RIGHT);
+    g->falllefta = animation_init(ANIMATION_GUARD_FALL_LEFT);
+    g->fallrighta = animation_init(ANIMATION_GUARD_FALL_RIGHT);
 
     guard_reset(g);
 

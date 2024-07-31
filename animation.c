@@ -84,16 +84,28 @@ struct animation *animation_init(enum animation_t t)
         a->sprites[1] = NULL;
         break;
     case ANIMATION_GUARD_CLIMB_LEFT:
-        // TODO:
+        a->sprites = sprites_init(4);
+        a->sprites[0] = guard_sprite_init(21, 1);
+        a->sprites[1] = guard_sprite_init(22, 2);
+        a->sprites[2] = guard_sprite_init(23, 2);
+        a->sprites[3] = NULL;
         break;
     case ANIMATION_GUARD_CLIMB_RIGHT:
-        // TODO:
+        a->sprites = sprites_init(4);
+        a->sprites[0] = guard_sprite_init(18, 1);
+        a->sprites[1] = guard_sprite_init(19, 2);
+        a->sprites[2] = guard_sprite_init(20, 2);
+        a->sprites[3] = NULL;
         break;
     case ANIMATION_GUARD_FALL_LEFT:
-        // TODO:
+        a->sprites = sprites_init(2);
+        a->sprites[0] = guard_sprite_init(26, 1);
+        a->sprites[1] = NULL;
         break;
     case ANIMATION_GUARD_FALL_RIGHT:
-        // TODO:
+        a->sprites = sprites_init(2);
+        a->sprites[0] = guard_sprite_init(8, 1);
+        a->sprites[1] = NULL;
         break;
     case ANIMATION_GUARD_LEFT:
         a->sprites = sprites_init(4);
