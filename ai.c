@@ -47,6 +47,14 @@ enum dir {
     DIR_UP,
 };
 
+// Return true if guard is looking right.
+static bool ai_looking_right(enum guard_state s)
+{
+    return s == GSTATE_CLIMB_RIGHT
+        || s == GSTATE_FALL_RIGHT
+        || s == GSTATE_RIGHT;
+}
+
 // If guard and the runner on the same level (map row) guard moves
 // directly toward the runner.
 static enum dir ai_scan_level(struct game *game, struct guard *guard)
@@ -288,9 +296,10 @@ static bool ai_falling(struct game *game, struct guard *guard)
     int x = guard->x;
     int y = guard->y;
     int ty = guard->ty;
+    int hdy = MOVE_DY / 2;
 
     if (is_tile(game, x, y, MAP_TILE_LADDER)
-        || is_tile(game, x, y, MAP_TILE_LADDER)) {
+        || (is_tile(game, x, y, MAP_TILE_ROPE) && (ty > -hdy && ty <= hdy))) {
         return false;
     }
 
@@ -386,9 +395,9 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (ty >= 0 && !can_move(game, x, y + 1)) {
             move = false;
         } else {
-            if (is_tile(game, x, y, MAP_TILE_ROPE)
-                && !is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
-                if (state == GSTATE_CLIMB_RIGHT) {
+            if (!is_tile(game, x, y, MAP_TILE_LADDER) &&
+                !is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
+                if (ai_looking_right(state)) {
                     state = GSTATE_FALL_RIGHT;
                 } else {
                     state = GSTATE_FALL_LEFT;
@@ -409,10 +418,10 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (ty >= 0 && !can_move(game, x, y + 1)) {
             ty = 0;
         }
-        if (state == GSTATE_LEFT || state == GSTATE_CLIMB_LEFT) {
-            state = GSTATE_FALL_LEFT;
-        } else if (state == GSTATE_RIGHT || state == GSTATE_CLIMB_RIGHT) {
+        if (ai_looking_right(state)) {
             state = GSTATE_FALL_RIGHT;
+        } else {
+            state = GSTATE_FALL_LEFT;
         }
         move = true;
         break;
