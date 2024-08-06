@@ -128,6 +128,17 @@ static bool empty_tile(struct game *game, int x, int y)
     return is_tile(game, x, y, MAP_TILE_EMPTY);
 }
 
+struct guard *guard_at_point(struct game *g, int x, int y)
+{
+    for (int i = 0; i < g->nguards; i++) {
+        if (g->guards[i]->x == x && g->guards[i]->y == y) {
+            return g->guards[i];
+        }
+    }
+
+    return NULL;
+}
+
 // TODO: Free digging hole animation.
 static void runner_tick(struct game *game, int key)
 {
@@ -143,18 +154,28 @@ static void runner_tick(struct game *game, int key)
         animation_tick(runner->holelefta);
         animation_tick(runner->holerighta);
 
-        int replay = animation_tick(runner->cura);
+        bool replay = animation_tick(runner->cura);
+        int gx = state == RSTATE_DIG_LEFT ? runner->x - 1 : runner->x + 1;
+        int gy = runner->y;
+        struct guard *g = guard_at_point(game, gx, gy);
+
+        int hx = state == RSTATE_DIG_LEFT ? runner->x - 1 : runner->x + 1;
+        int hy = runner->y + 1;
+
         // Digging animation reached its end, so it is time to get back
         // to the state runner was before digging.
         if (replay) {
-            struct animation *fill = animation_init(ANIMATION_HOLE_FILL);
-
-            if (state == RSTATE_DIG_LEFT) {
-                game->map[runner->y + 1][runner->x - 1]->cura = fill;
-                state = RSTATE_LEFT;
-            } else {
-                game->map[runner->y + 1][runner->x + 1]->cura = fill;
-                state = RSTATE_RIGHT;
+            // TODO: Free previous and this animation.
+            game->map[hy][hx]->cura = animation_init(ANIMATION_HOLE_FILL);
+            state = state == RSTATE_DIG_LEFT ? RSTATE_LEFT : RSTATE_RIGHT;
+        } else if (g != NULL) {
+            // If runner moves over the hole when it is still in progress
+            // we should rollback the digging process.
+            if (g->ty > TILE_MAP_HEIGHT / 4) {
+                // TODO: Free previous animation.
+                game->map[hy][hx]->curt = game->map[hy][hx]->baset;
+                game->map[hy][hx]->cura = game->map[hy][hx]->basea;
+                state = state == RSTATE_DIG_LEFT ? RSTATE_LEFT : RSTATE_RIGHT;
             }
         }
     } else if ((state == RSTATE_FALL_LEFT || state == RSTATE_FALL_RIGHT)
