@@ -473,8 +473,12 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             ty -= TILE_MAP_HEIGHT;
         }
         bool trapped = false;
+
+        if (ty < 0 && ai_hole(game, x, y)) {
+            guard->holey = y;
+        }
         if (ty >= 0) {
-            if (ai_hole(game, x, y)) {
+            if (ai_hole(game, x, y) && guard->holey == y) {
                 trapped = true;
                 guard->hole = true;
                 ty = 0;
@@ -496,6 +500,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             x -= 1;
             tx += TILE_MAP_WIDTH;
             guard->hole = false;
+            guard->holey = -1;
         }
         if (tx < 0 && !can_move(game, x - 1, y)) {
             move = false;
@@ -517,6 +522,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             x += 1;
             tx -= TILE_MAP_WIDTH;
             guard->hole = false;
+            guard->holey = -1;
         }
         if (tx > 0 && !can_move(game, x + 1, y)) {
             move = false;
@@ -541,7 +547,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         bool climb_out = guard->state == GSTATE_CLIMB_OUT;
 
         if (climb_out) {
-            if (ai_hole(game, x, y)) {
+            if (ai_hole(game, x, y) && guard->holey == y) {
                 if (can_move(game, x, y - 1)) {
                     // Climb up from the hole if we can.
                     move = true;
@@ -602,6 +608,7 @@ void ai_reborn(struct game *game, struct guard *guard)
     guard->x = x;
     guard->y = y;
     guard->hole = false;
+    guard->holey = -1;
     guard->state = GSTATE_REBORN;
     guard->cura = guard_state_animation(guard, GSTATE_REBORN);
 }

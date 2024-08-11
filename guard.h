@@ -60,6 +60,9 @@ struct guard {
     // over it. Used to prevent falling back into the hole we have just climbed
     // out from.
     bool hole;
+    // To prevent falling into the hole when crossing it horizontally we store Y
+    // coordinate of hole we are falling into. -1 when no falling is active.
+    int holey;
     // true if the guard carring a gold.
     bool gold;
 };

@@ -67,4 +67,5 @@ void guard_reset(struct guard *g)
     g->ty = 0;
     g->cura = g->lefta;
     g->state = GSTATE_LEFT;
+    g->holey = -1;
 }
