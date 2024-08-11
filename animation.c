@@ -38,8 +38,8 @@ static struct sprite *runner_sprite_init(int n, int frames)
 
 static struct sprite *guard_sprite_init(int n, int frames)
 {
-    int r = n / 9;
-    int c = n % 9;
+    int r = n / 11;
+    int c = n % 11;
 
     return animation_sprite_init(TEXTURE_GUARD,
         c * TILE_MAP_WIDTH, r * TILE_MAP_HEIGHT,
@@ -85,21 +85,21 @@ struct animation *animation_init(enum animation_t t)
         break;
     case ANIMATION_GUARD_CLIMB_LEFT:
         a->sprites = sprites_init(4);
-        a->sprites[0] = guard_sprite_init(21, 1);
-        a->sprites[1] = guard_sprite_init(22, 2);
-        a->sprites[2] = guard_sprite_init(23, 2);
+        a->sprites[0] = guard_sprite_init(25, 1);
+        a->sprites[1] = guard_sprite_init(26, 2);
+        a->sprites[2] = guard_sprite_init(27, 2);
         a->sprites[3] = NULL;
         break;
     case ANIMATION_GUARD_CLIMB_RIGHT:
         a->sprites = sprites_init(4);
-        a->sprites[0] = guard_sprite_init(18, 1);
-        a->sprites[1] = guard_sprite_init(19, 2);
-        a->sprites[2] = guard_sprite_init(20, 2);
+        a->sprites[0] = guard_sprite_init(22, 1);
+        a->sprites[1] = guard_sprite_init(23, 2);
+        a->sprites[2] = guard_sprite_init(24, 2);
         a->sprites[3] = NULL;
         break;
     case ANIMATION_GUARD_FALL_LEFT:
         a->sprites = sprites_init(2);
-        a->sprites[0] = guard_sprite_init(26, 1);
+        a->sprites[0] = guard_sprite_init(30, 1);
         a->sprites[1] = NULL;
         break;
     case ANIMATION_GUARD_FALL_RIGHT:
@@ -120,6 +120,26 @@ struct animation *animation_init(enum animation_t t)
         a->sprites[1] = guard_sprite_init(1, 2);
         a->sprites[2] = guard_sprite_init(2, 2);
         a->sprites[3] = NULL;
+        break;
+    case ANIMATION_GUARD_TRAP_LEFT:
+        a->sprites = sprites_init(7);
+        a->sprites[0] = guard_sprite_init(30, 51);
+        a->sprites[1] = guard_sprite_init(31, 3);
+        a->sprites[2] = guard_sprite_init(32, 3);
+        a->sprites[3] = guard_sprite_init(31, 3);
+        a->sprites[4] = guard_sprite_init(32, 3);
+        a->sprites[5] = guard_sprite_init(30, 3);
+        a->sprites[6] = NULL;
+        break;
+    case ANIMATION_GUARD_TRAP_RIGHT:
+        a->sprites = sprites_init(7);
+        a->sprites[0] = guard_sprite_init(8, 51);
+        a->sprites[1] = guard_sprite_init(9, 3);
+        a->sprites[2] = guard_sprite_init(10, 3);
+        a->sprites[3] = guard_sprite_init(9, 3);
+        a->sprites[4] = guard_sprite_init(10, 3);
+        a->sprites[5] = guard_sprite_init(8, 3);
+        a->sprites[6] = NULL;
         break;
     case ANIMATION_GUARD_UPDOWN:
         a->sprites = sprites_init(3);

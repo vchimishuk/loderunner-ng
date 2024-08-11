@@ -10,6 +10,8 @@ struct animation *guard_state_animation(struct guard *g, enum guard_state s)
     switch (s) {
     case GSTATE_CLIMB_LEFT:
         return g->climblefta;
+    case GSTATE_CLIMB_OUT:
+        return g->updowna;
     case GSTATE_CLIMB_RIGHT:
         return g->climbrighta;
     case GSTATE_FALL_LEFT:
@@ -20,6 +22,10 @@ struct animation *guard_state_animation(struct guard *g, enum guard_state s)
         return g->lefta;
     case GSTATE_RIGHT:
         return g->righta;
+    case GSTATE_TRAP_LEFT:
+        return g->traplefta;
+    case GSTATE_TRAP_RIGHT:
+        return g->traprighta;
     case GSTATE_UPDOWN:
         return g->updowna;
     default:
@@ -41,6 +47,8 @@ struct guard *guard_init()
     g->climbrighta = animation_init(ANIMATION_GUARD_CLIMB_RIGHT);
     g->falllefta = animation_init(ANIMATION_GUARD_FALL_LEFT);
     g->fallrighta = animation_init(ANIMATION_GUARD_FALL_RIGHT);
+    g->traplefta = animation_init(ANIMATION_GUARD_TRAP_LEFT);
+    g->traprighta = animation_init(ANIMATION_GUARD_TRAP_RIGHT);
 
     guard_reset(g);
 

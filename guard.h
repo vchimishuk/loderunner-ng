@@ -6,12 +6,15 @@
 
 enum guard_state {
     GSTATE_CLIMB_LEFT,
+    GSTATE_CLIMB_OUT,
     GSTATE_CLIMB_RIGHT,
     GSTATE_FALL_LEFT,
     GSTATE_FALL_RIGHT,
     GSTATE_LEFT,
     GSTATE_RIGHT,
     GSTATE_STOP,
+    GSTATE_TRAP_LEFT,
+    GSTATE_TRAP_RIGHT,
     GSTATE_UPDOWN,
 };
 
@@ -40,11 +43,19 @@ struct guard {
     struct animation *falllefta;
     // Looking right guard falling down.
     struct animation *fallrighta;
+    // Looking left shaking (before getting out from the hole) animation.
+    struct animation *traplefta;
+    // Looking right shaking (before getting out from the hole) animation.
+    struct animation *traprighta;
     // Currently active animation. Points to one of animations like lefta,
     // righta, updowna, ...
     struct animation *cura;
     // Guard state defines is it moving left/right, falling, etc.
     enum guard_state state;
+    // true if the guard is still climbing out of the hole and still located
+    // over it. Used to prevent falling back into the hole we have just climbed
+    // out from.
+    bool hole;
     // true if the guard carring a gold.
     bool gold;
 };

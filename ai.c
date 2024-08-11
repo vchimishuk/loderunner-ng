@@ -47,6 +47,26 @@ enum dir {
     DIR_UP,
 };
 
+// Return true if tested map tile acts like a hole dug by the runner.
+static bool ai_hole(struct game *g, int x, int y)
+{
+    return g->map[y][x]->curt == MAP_TILE_EMPTY
+        && g->map[y][x]->baset == MAP_TILE_BRICK;
+}
+
+// Check if tile at x:y coordinates has requested type and ignore holes dug
+// by the runner. Scanning doesn't treat holes as an empty space but keep seeing
+// them as bricks. However, since same-level scanning ignores bricks it ignores
+// holes as well.
+bool is_tilenh(struct game *game, int x, int y, enum map_tile_t t)
+{
+    if (t == MAP_TILE_BRICK) {
+        return is_tile(game, x, y, t) || ai_hole(game, x, y);
+    }
+
+    return is_tile(game, x, y, t);
+}
+
 // Return true if guard is looking right.
 static bool ai_looking_right(enum guard_state s)
 {
@@ -123,26 +143,26 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
 {
     // Return "no route" if cannot move down.
     if (y < MAP_HEIGHT - 1
-        && (is_tile(game, x, y + 1, MAP_TILE_BRICK)
-            || is_tile(game, x, y + 1, MAP_TILE_SOLID))) {
+        && (is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
+            || is_tilenh(game, x, y + 1, MAP_TILE_SOLID))) {
         return RATING_MAX;
     }
 
     // Until we haven't reached the ground.
-    while (y < MAP_HEIGHT && !is_tile(game, x, y + 1, MAP_TILE_BRICK)
-        && !is_tile(game, x, y + 1, MAP_TILE_SOLID)) {
+    while (y < MAP_HEIGHT && !is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
+        && !is_tilenh(game, x, y + 1, MAP_TILE_SOLID)) {
         // Try to trace left and right if we can (not in a freefall mode).
-        if (!is_tile(game, x, y, MAP_TILE_EMPTY)) {
+        if (!is_tilenh(game, x, y, MAP_TILE_EMPTY)) {
             // Check if we can turn left.
             if (x > 0) {
                 // Check if we can potentially move left.
                 // This check looks strange, as we do not check if there is an empty
                 // tile at x-1:y where the guard can move into. But this is how it
                 // is implemented in the original code.
-                if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
-                    || is_tile(game, x - 1, y + 1, MAP_TILE_SOLID)
-                    || is_tile(game, x - 1, y + 1, MAP_TILE_LADDER)
-                    || is_tile(game, x - 1, y, MAP_TILE_ROPE)) {
+                if (is_tilenh(game, x - 1, y + 1, MAP_TILE_BRICK)
+                    || is_tilenh(game, x - 1, y + 1, MAP_TILE_SOLID)
+                    || is_tilenh(game, x - 1, y + 1, MAP_TILE_LADDER)
+                    || is_tilenh(game, x - 1, y, MAP_TILE_ROPE)) {
                     // No need to keep moving down if we are already
                     // below the runner.
                     if (y >= game->runner->y) {
@@ -152,10 +172,10 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
             }
             // The same check for right.
             if (x < MAP_WIDTH - 1) {
-                if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
-                    || is_tile(game, x + 1, y + 1, MAP_TILE_SOLID)
-                    || is_tile(game, x + 1, y + 1, MAP_TILE_LADDER)
-                    || is_tile(game, x + 1, y, MAP_TILE_ROPE)) {
+                if (is_tilenh(game, x + 1, y + 1, MAP_TILE_BRICK)
+                    || is_tilenh(game, x + 1, y + 1, MAP_TILE_SOLID)
+                    || is_tilenh(game, x + 1, y + 1, MAP_TILE_LADDER)
+                    || is_tilenh(game, x + 1, y, MAP_TILE_ROPE)) {
                     if (y >= game->runner->y) {
                         break;
                     }
@@ -180,11 +200,11 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
 static int ai_scan_up(struct game *game, int x, int y, int startx)
 {
     // We cannot move up without ladder for sure.
-    if (!is_tile(game, x, y, MAP_TILE_LADDER)) {
+    if (!is_tilenh(game, x, y, MAP_TILE_LADDER)) {
         return RATING_MAX;
     }
 
-    while (y > 0 && is_tile(game, x, y, MAP_TILE_LADDER)) {
+    while (y > 0 && is_tilenh(game, x, y, MAP_TILE_LADDER)) {
         y--;
 
         if (x > 0) {
@@ -192,10 +212,10 @@ static int ai_scan_up(struct game *game, int x, int y, int startx)
             // This check looks strange, as we do not check if there is an empty
             // tile at x-1:y where the guard can move into. But this is how it
             // is implemented in the original code.
-            if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
-                || is_tile(game, x - 1, y + 1, MAP_TILE_SOLID)
-                || is_tile(game, x - 1, y + 1, MAP_TILE_LADDER)
-                || is_tile(game, x - 1, y, MAP_TILE_ROPE)) {
+            if (is_tilenh(game, x - 1, y + 1, MAP_TILE_BRICK)
+                || is_tilenh(game, x - 1, y + 1, MAP_TILE_SOLID)
+                || is_tilenh(game, x - 1, y + 1, MAP_TILE_LADDER)
+                || is_tilenh(game, x - 1, y, MAP_TILE_ROPE)) {
                 // No need to keep moving up if we are already above the runner.
                 if (y <= game->runner->y) {
                     break;
@@ -204,10 +224,10 @@ static int ai_scan_up(struct game *game, int x, int y, int startx)
         }
         // Perform the same logic for the right edge of the ladder.
         if (x < MAP_WIDTH) {
-            if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
-                || is_tile(game, x + 1, y + 1, MAP_TILE_SOLID)
-                || is_tile(game, x + 1, y + 1, MAP_TILE_LADDER)
-                || is_tile(game, x + 1, y, MAP_TILE_ROPE)) {
+            if (is_tilenh(game, x + 1, y + 1, MAP_TILE_BRICK)
+                || is_tilenh(game, x + 1, y + 1, MAP_TILE_SOLID)
+                || is_tilenh(game, x + 1, y + 1, MAP_TILE_LADDER)
+                || is_tilenh(game, x + 1, y, MAP_TILE_ROPE)) {
                 if (y <= game->runner->y) {
                     break;
                 }
@@ -243,20 +263,20 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
             break;
         }
 
-        if (is_tile(game, x + dx, y, MAP_TILE_BRICK)
-            || is_tile(game, x + dx, y, MAP_TILE_SOLID)) {
+        if (is_tilenh(game, x + dx, y, MAP_TILE_BRICK)
+            || is_tilenh(game, x + dx, y, MAP_TILE_SOLID)) {
             // We have reached a wall.
             break;
         }
 
         // Can climb left despite what is under the feet.
-        bool climb = is_tile(game, x + dx, y, MAP_TILE_LADDER)
-            || is_tile(game, x + dx, y, MAP_TILE_ROPE);
+        bool climb = is_tilenh(game, x + dx, y, MAP_TILE_LADDER)
+            || is_tilenh(game, x + dx, y, MAP_TILE_ROPE);
         // Can walk over the solid ground.
         bool walk = (y < MAP_HEIGHT - 1)
-            && (is_tile(game, x + dx, y + 1, MAP_TILE_BRICK)
-                || is_tile(game, x + dx, y + 1, MAP_TILE_SOLID)
-                || is_tile(game, x + dx, y + 1, MAP_TILE_LADDER));
+            && (is_tilenh(game, x + dx, y + 1, MAP_TILE_BRICK)
+                || is_tilenh(game, x + dx, y + 1, MAP_TILE_SOLID)
+                || is_tilenh(game, x + dx, y + 1, MAP_TILE_LADDER));
         // Reached the bottom of the map so can walk on its edge.
         bool ground = (y == MAP_HEIGHT - 1);
 
@@ -291,6 +311,7 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
     return rating;
 }
 
+// Check if the guard must freefall down into a hole or over regular empty tile.
 static bool ai_falling(struct game *game, struct guard *guard)
 {
     int x = guard->x;
@@ -339,7 +360,14 @@ static bool ai_falling(struct game *game, struct guard *guard)
 //  * Trace right path: the same logic as tracing left actually.
 static enum dir ai_scan(struct game *game, struct guard *guard)
 {
-    if (ai_falling(game, guard)) {
+    // Avoid falling back to the hole we have just climbed out from by
+    // disabling all movement or falling down.
+    bool no_down = guard->hole;
+
+    if (guard->state == GSTATE_CLIMB_OUT) {
+        return DIR_UP;
+    }
+    if (!no_down && ai_falling(game, guard)) {
         return DIR_FALL;
     }
 
@@ -350,10 +378,13 @@ static enum dir ai_scan(struct game *game, struct guard *guard)
     }
 
     int score = RATING_MAX;
-    int s = ai_scan_down(game, guard->x, guard->y, guard->x);
-    if (s < score) {
-        score = s;
-        d = DIR_DOWN;
+    int s;
+    if (!no_down) {
+        s = ai_scan_down(game, guard->x, guard->y, guard->x);
+        if (s < score) {
+            score = s;
+            d = DIR_DOWN;
+        }
     }
     s = ai_scan_up(game, guard->x, guard->y, guard->x);
     if (s < score) {
@@ -415,13 +446,20 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             y += 1;
             ty -= TILE_MAP_HEIGHT;
         }
-        if (ty >= 0 && !can_move(game, x, y + 1)) {
-            ty = 0;
+        bool trapped = false;
+        if (ty >= 0) {
+            if (ai_hole(game, x, y)) {
+                trapped = true;
+                guard->hole = true;
+                ty = 0;
+            } else if (!can_move(game, x, y + 1)) {
+                ty = 0;
+            }
         }
         if (ai_looking_right(state)) {
-            state = GSTATE_FALL_RIGHT;
+            state = trapped ? GSTATE_TRAP_RIGHT : GSTATE_FALL_RIGHT;
         } else {
-            state = GSTATE_FALL_LEFT;
+            state = trapped ? GSTATE_TRAP_LEFT : GSTATE_FALL_LEFT;
         }
         move = true;
         break;
@@ -431,6 +469,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (tx < -(TILE_MAP_WIDTH / 2)) {
             x -= 1;
             tx += TILE_MAP_WIDTH;
+            guard->hole = false;
         }
         if (tx < 0 && !can_move(game, x - 1, y)) {
             move = false;
@@ -451,6 +490,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (tx > TILE_MAP_WIDTH / 2) {
             x += 1;
             tx -= TILE_MAP_WIDTH;
+            guard->hole = false;
         }
         if (tx > 0 && !can_move(game, x + 1, y)) {
             move = false;
@@ -470,8 +510,22 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             y -= 1;
             ty += TILE_MAP_HEIGHT;
         }
+
         bool onladder = is_tile(game, x, y, MAP_TILE_LADDER);
-        if (ty < 0 && (!onladder || !can_move(game, x, y - 1))) {
+        bool climb_out = guard->state == GSTATE_CLIMB_OUT;
+
+        if (climb_out) {
+            if (ai_hole(game, x, y)) {
+                if (can_move(game, x, y - 1)) {
+                    // Climb up from the hole if we can.
+                    move = true;
+                }
+            } else {
+                // We are over the hole now, let's move left or right now.
+                state = GSTATE_UPDOWN;
+                move = true;
+            }
+        } else if (ty < 0 && (!onladder || !can_move(game, x, y - 1))) {
             move = false;
         } else {
             state = GSTATE_UPDOWN;
@@ -512,6 +566,7 @@ void ai_tick(struct game *game)
         imoves = 0;
     }
 
+    // Regular (running) guards move logic.
     int moves = move_policy[game->nguards][imoves];
     while (moves-- > 0) {
         if (++iguard >= game->nguards) {
@@ -519,11 +574,26 @@ void ai_tick(struct game *game)
         }
 
         struct guard *g = game->guards[iguard];
-        // if (can_move(g)) {
-        //     continue;
-        // }
+        if (g->state == GSTATE_TRAP_LEFT
+            || g->state == GSTATE_TRAP_RIGHT) {
+            continue;
+        }
 
         enum dir d = ai_scan(game, g);
         ai_move_guard(game, g, d);
+    }
+
+    // Trapped guards climbing out logic.
+    for (int i = 0; i < game->nguards; i++) {
+        struct guard *g = game->guards[i];
+        if (g->state == GSTATE_TRAP_LEFT
+            || g->state == GSTATE_TRAP_RIGHT) {
+            // TODO: Make sure the runner can dig 3 holes, traps 3 guards
+            //       and run over them.
+            if (animation_tick(g->cura)) {
+                g->state = GSTATE_CLIMB_OUT;
+                g->cura = guard_state_animation(g, GSTATE_CLIMB_OUT);
+            }
+        }
     }
 }
