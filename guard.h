@@ -11,6 +11,7 @@ enum guard_state {
     GSTATE_FALL_LEFT,
     GSTATE_FALL_RIGHT,
     GSTATE_LEFT,
+    GSTATE_REBORN,
     GSTATE_RIGHT,
     GSTATE_STOP,
     GSTATE_TRAP_LEFT,
@@ -47,6 +48,9 @@ struct guard {
     struct animation *traplefta;
     // Looking right shaking (before getting out from the hole) animation.
     struct animation *traprighta;
+    // Guard reborn animation. After reborn animation completed guard moves to
+    // falling right state.
+    struct animation *reborna;
     // Currently active animation. Points to one of animations like lefta,
     // righta, updowna, ...
     struct animation *cura;

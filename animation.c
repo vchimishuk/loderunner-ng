@@ -114,6 +114,12 @@ struct animation *animation_init(enum animation_t t)
         a->sprites[2] = guard_sprite_init(5, 2);
         a->sprites[3] = NULL;
         break;
+    case ANIMATION_GUARD_REBORN:
+        a->sprites = sprites_init(3);
+        a->sprites[0] = guard_sprite_init(28, 6);
+        a->sprites[1] = guard_sprite_init(29, 2);
+        a->sprites[2] = NULL;
+        break;
     case ANIMATION_GUARD_RIGHT:
         a->sprites = sprites_init(4);
         a->sprites[0] = guard_sprite_init(0, 2);

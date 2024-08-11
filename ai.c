@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <time.h>
 #include "ai.h"
 #include "exit.h"
 #include "guard.h"
@@ -46,6 +47,31 @@ enum dir {
     DIR_RIGHT,
     DIR_UP,
 };
+
+// Return random X coordinate to reborn guard at.
+static int ai_rand_rebornx()
+{
+    static int row[MAP_WIDTH - 1];
+    static int idx = MAP_WIDTH;
+
+    if (idx >= MAP_WIDTH) {
+        srandom(time(NULL));
+
+        for (int i = 0; i < MAP_WIDTH; i++) {
+            row[i] = i;
+        }
+        for (int i = 0; i < MAP_WIDTH; i++) {
+            int j = (int) random() % MAP_WIDTH;
+
+            int t = row[i];
+            row[i] = row[j];
+            row[j] = t;
+        }
+        idx = 0;
+    }
+
+    return row[idx++];
+}
 
 // Return true if tested map tile acts like a hole dug by the runner.
 static bool ai_hole(struct game *g, int x, int y)
@@ -553,6 +579,33 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
     }
 }
 
+// Set guard into reborn state after he died immured in the wall.
+void ai_reborn(struct game *game, struct guard *guard)
+{
+    int x = ai_rand_rebornx();
+    int y = 1;
+    int xs = x;
+
+    // Avoid guard to be born in holes or where gold lays.
+    // TODO: Add gold check.
+    while (!is_tile(game, x, y, MAP_TILE_EMPTY) || ai_hole(game, x, y)) {
+        x = ai_rand_rebornx();
+        if (x == xs) {
+            // We have tried all positions this row, let's move to the next one.
+            y++;
+            if (y == MAP_HEIGHT) {
+                die("guard cannot be born");
+            }
+        }
+    }
+
+    guard->x = x;
+    guard->y = y;
+    guard->hole = false;
+    guard->state = GSTATE_REBORN;
+    guard->cura = guard_state_animation(guard, GSTATE_REBORN);
+}
+
 // Callback to move guards.
 // Called on every game loop tick, calculates direction to move for every
 // guard and make the move. On every call a few guards are moved depends on
@@ -575,7 +628,8 @@ void ai_tick(struct game *game)
 
         struct guard *g = game->guards[iguard];
         if (g->state == GSTATE_TRAP_LEFT
-            || g->state == GSTATE_TRAP_RIGHT) {
+            || g->state == GSTATE_TRAP_RIGHT
+            || g->state == GSTATE_REBORN) {
             continue;
         }
 
@@ -594,6 +648,15 @@ void ai_tick(struct game *game)
                 g->state = GSTATE_CLIMB_OUT;
                 g->cura = guard_state_animation(g, GSTATE_CLIMB_OUT);
             }
+        } else if (g->state == GSTATE_REBORN) {
+            if (animation_tick(g->cura)) {
+                g->state = GSTATE_FALL_RIGHT;
+                g->cura = guard_state_animation(g, GSTATE_FALL_RIGHT);
+            }
+        }
+        if (g->state != GSTATE_REBORN
+            && is_tile(game, g->x, g->y, MAP_TILE_BRICK)) {
+            ai_reborn(game, g);
         }
     }
 }

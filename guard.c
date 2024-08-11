@@ -20,6 +20,8 @@ struct animation *guard_state_animation(struct guard *g, enum guard_state s)
         return g->fallrighta;
     case GSTATE_LEFT:
         return g->lefta;
+    case GSTATE_REBORN:
+        return g->reborna;
     case GSTATE_RIGHT:
         return g->righta;
     case GSTATE_TRAP_LEFT:
@@ -49,6 +51,7 @@ struct guard *guard_init()
     g->fallrighta = animation_init(ANIMATION_GUARD_FALL_RIGHT);
     g->traplefta = animation_init(ANIMATION_GUARD_TRAP_LEFT);
     g->traprighta = animation_init(ANIMATION_GUARD_TRAP_RIGHT);
+    g->reborna = animation_init(ANIMATION_GUARD_REBORN);
 
     guard_reset(g);
 
