@@ -108,19 +108,6 @@ static struct sprite **text_sprites_init(char *s)
     return sprites;
 }
 
-static struct gold *gold(struct game *g, int x, int y)
-{
-    for (int i = 0; i < g->ngold; i++) {
-        struct gold *gl = g->gold[i];
-
-        if (gl->visible && gl->x == x && gl->y == y) {
-            return gl;
-        }
-    }
-
-    return NULL;
-}
-
 // TODO: Check correct usage.
 static bool empty_tile(struct game *game, int x, int y)
 {
@@ -298,7 +285,7 @@ static void runner_tick(struct game *game, int key)
             // Dig only bricks with empty gold-free space above.
             if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
                 && is_tile(game, x + 1, y, MAP_TILE_EMPTY)
-                && gold(game, x + 1, y) == NULL) {
+                && gold_get(game, x + 1, y) == NULL) {
 
                 runner->tx = 0;
                 game->map[runner->y + 1][runner->x + 1]->cura = NULL;
@@ -314,7 +301,7 @@ static void runner_tick(struct game *game, int key)
             // Dig only bricks with empty space above.
             if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
                 && is_tile(game, x - 1, y, MAP_TILE_EMPTY)
-                && gold(game, x - 1, y) == NULL) {
+                && gold_get(game, x - 1, y) == NULL) {
 
                 runner->tx = 0;
                 game->map[runner->y + 1][runner->x - 1]->cura = NULL;
@@ -384,12 +371,8 @@ static void detect_collision(struct game *game)
     struct runner *r = game->runner;
 
     // Runner picks up gold.
-    struct gold *g = gold(game, r->x, r->y);
-    if (g != NULL
-        && abs(0 - r->tx) <= TILE_MAP_WIDTH / 4
-        && abs(0 - r->ty) <= TILE_MAP_HEIGHT / 4) {
-
-        g->visible = false;
+    struct gold *g = gold_pickup(game, r->x, r->y, r->tx, r->ty);
+    if (g != NULL) {
         r->ngold++;
 
         // All gold have been picked up. Show hidden ladders

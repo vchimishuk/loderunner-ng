@@ -1,13 +1,13 @@
 #include <stdlib.h>
-#include <time.h>
 #include "ai.h"
 #include "exit.h"
+#include "gold.h"
 #include "guard.h"
 #include "level.h"
 #include "phys.h"
 #include "tile.h"
 
-// TODO: Should we join ai.c and game.c?
+// TODO: Should we join ai.c and guard.c.
 
 // TODO: Looks like this is the max number of guards possible.
 //       Update another define.
@@ -55,8 +55,6 @@ static int ai_rand_rebornx()
     static int idx = MAP_WIDTH;
 
     if (idx >= MAP_WIDTH) {
-        srandom(time(NULL));
-
         for (int i = 0; i < MAP_WIDTH; i++) {
             row[i] = i;
         }
@@ -71,6 +69,40 @@ static int ai_rand_rebornx()
     }
 
     return row[idx++];
+}
+
+static int ai_rand_goldholds()
+{
+    return (random() % 26) + 11; // 11..36
+}
+
+// Try to drop gold if it is time.
+// Every time guard moves to the new map tile gold holding counter
+// is decremented. When counter reaches 0 gold is dropped.
+static void ai_drop_gold(struct game *game, struct guard *guard)
+{
+    int x = guard->x;
+    int y = guard->y;
+
+    if (guard->goldholds < 0) {
+        guard->goldholds++;
+    } else if (guard->goldholds == 0
+        && guard->gold != NULL
+        && is_tile(game, x, y, MAP_TILE_EMPTY)
+        && ((y == MAP_HEIGHT - 1)
+            || (is_tile(game, x, y + 1, MAP_TILE_BRICK)
+                || is_tile(game, x, y + 1, MAP_TILE_SOLID)
+                || is_tile(game, x, y + 1, MAP_TILE_LADDER)))) {
+        gold_drop(guard->gold, x, y);
+        guard->gold = NULL;
+        // Set gold holding counter to -1 to prevent picking up the gold we have
+        // just dropped before moving to the next tile.
+        guard->goldholds = -1;
+    } else if (guard->goldholds > 0) {
+        guard->goldholds--;
+    }
+
+    // TODO: When guard dies gold he keeps becomes lost.
 }
 
 // Return true if tested map tile acts like a hole dug by the runner.
@@ -448,6 +480,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (ty > TILE_MAP_HEIGHT / 2) {
             y += 1;
             ty -= TILE_MAP_HEIGHT;
+            ai_drop_gold(game, guard);
         }
         if (ty >= 0 && !can_move(game, x, y + 1)) {
             move = false;
@@ -471,6 +504,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (ty > TILE_MAP_HEIGHT / 2) {
             y += 1;
             ty -= TILE_MAP_HEIGHT;
+            ai_drop_gold(game, guard);
         }
         bool trapped = false;
 
@@ -501,6 +535,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             tx += TILE_MAP_WIDTH;
             guard->hole = false;
             guard->holey = -1;
+            ai_drop_gold(game, guard);
         }
         if (tx < 0 && !can_move(game, x - 1, y)) {
             move = false;
@@ -523,6 +558,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             tx -= TILE_MAP_WIDTH;
             guard->hole = false;
             guard->holey = -1;
+            ai_drop_gold(game, guard);
         }
         if (tx > 0 && !can_move(game, x + 1, y)) {
             move = false;
@@ -541,6 +577,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         if (ty < -(TILE_MAP_HEIGHT / 2)) {
             y -= 1;
             ty += TILE_MAP_HEIGHT;
+            ai_drop_gold(game, guard);
         }
 
         bool onladder = is_tile(game, x, y, MAP_TILE_LADDER);
@@ -647,6 +684,7 @@ void ai_tick(struct game *game)
     // Trapped guards climbing out logic.
     for (int i = 0; i < game->nguards; i++) {
         struct guard *g = game->guards[i];
+
         if (g->state == GSTATE_TRAP_LEFT
             || g->state == GSTATE_TRAP_RIGHT) {
             // TODO: Make sure the runner can dig 3 holes, traps 3 guards
@@ -661,6 +699,17 @@ void ai_tick(struct game *game)
                 g->cura = guard_state_animation(g, GSTATE_FALL_RIGHT);
             }
         }
+
+        // Pick up gold when step over it.
+        if (g->gold == NULL && g->goldholds == 0) {
+            struct gold *gld = gold_pickup(game, g->x, g->y, g->tx, g->ty);
+            if (gld != NULL) {
+                g->gold = gld;
+                g->goldholds = ai_rand_goldholds();
+            }
+        }
+
+        // If guard walled up in the wall it becomes dead and should be reborn.
         if (g->state != GSTATE_REBORN
             && is_tile(game, g->x, g->y, MAP_TILE_BRICK)) {
             ai_reborn(game, g);

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "exit.h"
@@ -68,6 +69,8 @@ static bool key_wait()
 
 int main()
 {
+    srandom(time(NULL));
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         die("failed to initialize SDL: %s", SDL_GetError());
     }

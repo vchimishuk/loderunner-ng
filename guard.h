@@ -63,8 +63,12 @@ struct guard {
     // To prevent falling into the hole when crossing it horizontally we store Y
     // coordinate of hole we are falling into. -1 when no falling is active.
     int holey;
-    // true if the guard carring a gold.
-    bool gold;
+    // Gold guard is holding if any.
+    struct gold *gold;
+    // When guard picks up a gold a random number is generated. As guard moves
+    // during the game this counter is decremented every time guard moves to the
+    // next map tile. Gold is dropped when 0 is reached.
+    int goldholds;
 };
 
 struct guard *guard_init();
