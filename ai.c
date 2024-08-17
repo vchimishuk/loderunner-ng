@@ -648,6 +648,15 @@ void ai_reborn(struct game *game, struct guard *guard)
     guard->holey = -1;
     guard->state = GSTATE_REBORN;
     guard->cura = guard_state_animation(guard, GSTATE_REBORN);
+
+    // If guard dies still holding gold means that he could not drop it earlier.
+    // Gold must be discarded in this case as a result runner have to pickup
+    // one gold less.
+    if (guard->gold != NULL) {
+        game_discard_gold(game, guard->gold);
+        guard->gold = NULL;
+        guard->goldholds = 0;
+    }
 }
 
 // Callback to move guards.

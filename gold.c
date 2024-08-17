@@ -42,7 +42,7 @@ struct gold *gold_get(struct game *g, int x, int y)
 
 struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
 {
-    struct gold *g = get_gold(game, x, y);
+    struct gold *g = gold_get(game, x, y);
     if (g != NULL
         && abs(0 - tx) <= TILE_MAP_WIDTH / 4
         && abs(0 - ty) <= TILE_MAP_HEIGHT / 4) {

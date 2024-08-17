@@ -374,12 +374,12 @@ static void detect_collision(struct game *game)
     struct gold *g = gold_pickup(game, r->x, r->y, r->tx, r->ty);
     if (g != NULL) {
         r->ngold++;
+    }
 
-        // All gold have been picked up. Show hidden ladders
-        // and let the runner finish current game.
-        if (game->ngold == r->ngold) {
-            open_hladder(game);
-        }
+    // All gold have been picked up. Show hidden ladders
+    // and let the runner finish current game.
+    if (game->ngold == r->ngold) {
+        open_hladder(game);
     }
 
     // Runner is walled up in a wall.
@@ -643,4 +643,16 @@ void game_destroy(struct game *game)
     // TODO: Free map.
     // TODO: Free gold.
     free(game);
+}
+
+void game_discard_gold(struct game *game, struct gold *gold)
+{
+    for (int i = 0; i < game->ngold; i++) {
+        if (game->gold[i] == gold) {
+            gold_destroy(game->gold[i]);
+            game->gold[i] = game->gold[game->ngold - 1];
+            game->ngold--;
+            break;
+        }
+    }
 }
