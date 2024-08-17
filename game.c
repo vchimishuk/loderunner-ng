@@ -365,11 +365,9 @@ static void open_hladder(struct game *g)
 
 /*
  * Check game state for collisions: runner or guard death.
- * TODO: Gold picking up or lossing here?
  */
 static void detect_collision(struct game *game)
 {
-    // TODO: Also check runner-guard collision here.
     struct runner *r = game->runner;
 
     // Runner picks up gold.
@@ -384,8 +382,10 @@ static void detect_collision(struct game *game)
         open_hladder(game);
     }
 
-    // Runner is walled up in a wall.
-    if (is_tile(game, r->x, r->y, MAP_TILE_BRICK)) {
+    // Runner's death: walled up in a wall or hit by a guard.
+    struct guard *guard = guard_at_point(game, r->x, r->y);
+    if (is_tile(game, r->x, r->y, MAP_TILE_BRICK)
+        || guard != NULL) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
     }
