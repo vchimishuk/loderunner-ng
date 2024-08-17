@@ -105,6 +105,27 @@ static void ai_drop_gold(struct game *game, struct guard *guard)
     // TODO: When guard dies gold he keeps becomes lost.
 }
 
+// Drop gold when trapped. Discard gold if it is not possible to drp the gold.
+static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
+{
+    if (guard->gold == NULL) {
+        return;
+    }
+
+    int x = guard->x;
+    int y = guard->y;
+    if (is_tile(game, x, y - 1, MAP_TILE_EMPTY)) {
+        gold_drop(guard->gold, x, y - 1);
+    } else {
+        game_discard_gold(game, guard->gold);
+    }
+
+    guard->gold = NULL;
+    // Set goldholds small enough to prevent guard from picking up the gold back
+    // he just dropped.
+    guard->goldholds = -2;
+}
+
 // Return true if tested map tile acts like a hole dug by the runner.
 static bool ai_hole(struct game *g, int x, int y)
 {
@@ -516,6 +537,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 trapped = true;
                 guard->hole = true;
                 ty = 0;
+                ai_drop_gold_trapped(game, guard);
             } else if (!can_move(game, x, y + 1)) {
                 ty = 0;
             }
@@ -690,7 +712,7 @@ void ai_tick(struct game *game)
         ai_move_guard(game, g, d);
     }
 
-    // Trapped guards climbing out logic.
+    // Rebornd and trapped guards climbing out logic.
     for (int i = 0; i < game->nguards; i++) {
         struct guard *g = game->guards[i];
 
