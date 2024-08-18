@@ -54,8 +54,8 @@ struct animation {
 };
 
 struct animation *animation_init(enum animation_t t);
+void animation_destroy(struct animation *a);
 bool animation_tick(struct animation *a);
 void animation_reset(struct animation *a);
-// TODO: animation_destroy();
 
 #endif /* ANIMATION_H_ */

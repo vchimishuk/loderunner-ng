@@ -58,6 +58,21 @@ struct guard *guard_init()
     return g;
 }
 
+void guard_destroy(struct guard *g)
+{
+    animation_destroy(g->lefta);
+    animation_destroy(g->righta);
+    animation_destroy(g->updowna);
+    animation_destroy(g->climblefta);
+    animation_destroy(g->climbrighta);
+    animation_destroy(g->falllefta);
+    animation_destroy(g->fallrighta);
+    animation_destroy(g->traplefta);
+    animation_destroy(g->traprighta);
+    animation_destroy(g->reborna);
+    free(g);
+}
+
 void guard_reset(struct guard *g)
 {
     // TODO: Start position?

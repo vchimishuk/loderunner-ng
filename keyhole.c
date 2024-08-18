@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include "exit.h"
 #include "keyhole.h"
 
 static bool valid(int x, int y)
@@ -59,8 +60,9 @@ static void render_pixel(SDL_Renderer *renderer, int x, int y)
     r.y = y;
     r.w = KH_PIXEL;
     r.h = KH_PIXEL;
-    // TODO: Handle error.
-    SDL_RenderFillRect(renderer, &r);
+    if (SDL_RenderFillRect(renderer, &r) < 0) {
+        die_sdl("SDL_RenderFillRect");
+    }
 }
 
 /*

@@ -22,6 +22,7 @@ struct level {
     enum map_tile_t map[MAP_HEIGHT][MAP_WIDTH];
 };
 
-struct level *load_level(int n);
+struct level *level_init(int n);
+void level_destroy(struct level *l);
 
 #endif /* LEVEL_H_ */

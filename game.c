@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <SDL2/SDL.h>
 #include "ai.h"
 #include "animation.h"
@@ -38,9 +39,21 @@ static struct map_tile *map_tile_init(enum map_tile_t t, enum animation_t a,
     return m;
 }
 
+static void map_tile_destroy(struct map_tile *t)
+{
+    if (t->cura != t->basea) {
+        animation_destroy(t->cura);
+    }
+    animation_destroy(t->basea);
+    free(t);
+}
+
 static void map_tile_reset(struct map_tile *tile)
 {
     tile->curt = tile->baset;
+    if (tile->cura != tile->basea) {
+        animation_destroy(tile->cura);
+    }
     tile->cura = tile->basea;
     if (tile->cura != NULL) {
         animation_reset(tile->cura);
@@ -55,6 +68,12 @@ static struct ground_tile *ground_tile_init(int col)
     tl->y = MAP_HEIGHT * TILE_MAP_HEIGHT;
 
     return tl;
+}
+
+static void ground_tile_destroy(struct ground_tile *t)
+{
+    animation_destroy(t->a);
+    free(t);
 }
 
 static struct sprite **text_sprites_init(char *s)
@@ -108,6 +127,16 @@ static struct sprite **text_sprites_init(char *s)
     return sprites;
 }
 
+void text_sprites_destroy(struct sprite **s)
+{
+    struct sprite **p = s;
+    while (*p != NULL) {
+        free(*p);
+        p++;
+    }
+    free(s);
+}
+
 // TODO: Check correct usage.
 static bool empty_tile(struct game *game, int x, int y)
 {
@@ -126,7 +155,6 @@ struct guard *guard_at_point(struct game *g, int x, int y)
     return NULL;
 }
 
-// TODO: Free digging hole animation.
 static void runner_tick(struct game *game, int key)
 {
     struct runner *runner = game->runner;
@@ -152,15 +180,15 @@ static void runner_tick(struct game *game, int key)
         // Digging animation reached its end, so it is time to get back
         // to the state runner was before digging.
         if (replay) {
-            // TODO: Free previous and this animation.
+            assert(game->map[hy][hx]->cura == NULL);
             game->map[hy][hx]->cura = animation_init(ANIMATION_HOLE_FILL);
             state = state == RSTATE_DIG_LEFT ? RSTATE_LEFT : RSTATE_RIGHT;
         } else if (g != NULL) {
             // If runner moves over the hole when it is still in progress
             // we should rollback the digging process.
             if (g->ty > TILE_MAP_HEIGHT / 4) {
-                // TODO: Free previous animation.
                 game->map[hy][hx]->curt = game->map[hy][hx]->baset;
+                assert(game->map[hy][hx]->cura == NULL);
                 game->map[hy][hx]->cura = game->map[hy][hx]->basea;
                 state = state == RSTATE_DIG_LEFT ? RSTATE_LEFT : RSTATE_RIGHT;
             }
@@ -289,11 +317,14 @@ static void runner_tick(struct game *game, int key)
                 && is_tile(game, x + 1, y, MAP_TILE_EMPTY)
                 && gold_get(game, x + 1, y) == NULL) {
 
-                runner->tx = 0;
-                game->map[runner->y + 1][runner->x + 1]->cura = NULL;
-                game->map[runner->y + 1][runner->x + 1]->curt = MAP_TILE_EMPTY;
+                struct map_tile *t = game->map[runner->y + 1][runner->x + 1];
+                // Make sure we do not need to free animation.
+                assert(t->cura == t->basea);
+                t->cura = NULL;
+                t->curt = MAP_TILE_EMPTY;
                 state = RSTATE_DIG_RIGHT;
                 animation_reset(runner->holerighta);
+                runner->tx = 0;
                 move = true;
             } else {
                 move = false;
@@ -305,11 +336,14 @@ static void runner_tick(struct game *game, int key)
                 && is_tile(game, x - 1, y, MAP_TILE_EMPTY)
                 && gold_get(game, x - 1, y) == NULL) {
 
-                runner->tx = 0;
-                game->map[runner->y + 1][runner->x - 1]->cura = NULL;
-                game->map[runner->y + 1][runner->x - 1]->curt = MAP_TILE_EMPTY;
+                struct map_tile *t = game->map[runner->y + 1][runner->x - 1];
+                // Make sure we do not need to free animation.
+                assert(t->cura == t->basea);
+                t->cura = NULL;
+                t->curt = MAP_TILE_EMPTY;
                 state = RSTATE_DIG_LEFT;
                 animation_reset(runner->holelefta);
+                runner->tx = 0;
                 move = true;
             } else {
                 move = false;
@@ -342,8 +376,7 @@ static void map_tick(struct game *game)
             if (t != NULL && t->cura != NULL) {
                 bool replay = animation_tick(t->cura);
                 if (replay) {
-                    t->cura = t->basea;
-                    t->curt = t->baset;
+                    map_tile_reset(t);
                 }
             }
         }
@@ -524,6 +557,32 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     return game;
 }
 
+void game_destroy(struct game *game)
+{
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            map_tile_destroy(game->map[i][j]);
+        }
+    }
+
+    for (int i = 0; i < MAP_WIDTH; i++) {
+        ground_tile_destroy(game->ground[i]);
+    }
+
+    // TODO: Free info_score.
+    // TODO: Free info_lives.
+    // TODO: Free info_level.
+
+    runner_destroy(game->runner);
+
+    for (int i = 0; i < game->nguards; i++) {
+        guard_destroy(game->guards[i]);
+    }
+    free(game->guards);
+
+    free(game);
+}
+
 void game_render(struct game *game, SDL_Renderer *renderer)
 {
     for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -555,7 +614,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     }
 
     int col = 0;
-    int yinfo = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
+    int infoy = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
     if (game->info_score == NULL) {
         char buf[16];
         snprintf(buf, 16, "SCORE%07d", 100500);
@@ -563,7 +622,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 
     }
     for (int i = 0; game->info_score[i] != NULL; i++, col++) {
-        render(renderer, game->info_score[i], col * TILE_TEXT_WIDTH, yinfo);
+        render(renderer, game->info_score[i], col * TILE_TEXT_WIDTH, infoy);
     }
     if (game->info_lives == NULL) {
         char buf[16];
@@ -571,7 +630,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         game->info_lives = text_sprites_init(buf);
     }
     for (int i = 0; game->info_lives[i] != NULL; i++, col++) {
-        render(renderer, game->info_lives[i], col * TILE_TEXT_WIDTH, yinfo);
+        render(renderer, game->info_lives[i], col * TILE_TEXT_WIDTH, infoy);
     }
     if (game->info_level == NULL) {
         char buf[16];
@@ -579,7 +638,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         game->info_level = text_sprites_init(buf);
     }
     for (int i = 0; game->info_level[i] != NULL; i++, col++) {
-        render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, yinfo);
+        render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, infoy);
     }
 
     if (game->state == GSTATE_START || game->state == GSTATE_END) {
@@ -638,13 +697,6 @@ bool game_tick(struct game *game, int key)
     // TODO: Make game_render() static and call it here instead of main.c?
 
     return false;
-}
-
-void game_destroy(struct game *game)
-{
-    // TODO: Free map.
-    // TODO: Free gold.
-    free(game);
 }
 
 void game_discard_gold(struct game *game, struct gold *gold)

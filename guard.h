@@ -72,7 +72,8 @@ struct guard {
 };
 
 struct guard *guard_init();
-void guard_reset(struct guard *guard);
+void guard_destroy(struct guard *g);
+void guard_reset(struct guard *g);
 struct animation *guard_state_animation(struct guard *g, enum guard_state s);
 
 #endif /* GUARD_H_ */

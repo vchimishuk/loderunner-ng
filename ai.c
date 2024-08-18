@@ -101,8 +101,6 @@ static void ai_drop_gold(struct game *game, struct guard *guard)
     } else if (guard->goldholds > 0) {
         guard->goldholds--;
     }
-
-    // TODO: When guard dies gold he keeps becomes lost.
 }
 
 // Drop gold when trapped. Discard gold if it is not possible to drp the gold.

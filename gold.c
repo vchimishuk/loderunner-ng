@@ -14,17 +14,17 @@ struct gold *gold_init(int x, int y)
     return g;
 }
 
+void gold_destroy(struct gold *gold)
+{
+    animation_destroy(gold->animation);
+    free(gold);
+}
+
 void gold_reset(struct gold *g)
 {
     g->x = g->sx;
     g->y = g->sy;
     g->visible = true;
-}
-
-void gold_destroy(struct gold *gold)
-{
-    // TODO: animation_destroy(gold->animation);
-    free(gold);
 }
 
 struct gold *gold_get(struct game *g, int x, int y)
@@ -40,6 +40,9 @@ struct gold *gold_get(struct game *g, int x, int y)
     return NULL;
 }
 
+/*
+ * Returns gold at runner's position if can.
+ */
 struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
 {
     struct gold *g = gold_get(game, x, y);

@@ -30,8 +30,7 @@ static const char *TILE_CHARS = "# $0SH-&@X";
  * Load level from file.
  * It is caller's responsibility to free returned object.
  */
-// TODO: Rename to init_level();
-struct level *load_level(int n)
+struct level *level_init(int n)
 {
     char buf[4];
     snprintf(buf, 4, "%03d", n % 1000);
@@ -83,6 +82,11 @@ struct level *load_level(int n)
     free(fname);
 
     return lvl;
+}
+
+void level_destroy(struct level *l)
+{
+    free(l);
 }
 
 // TODO: Just for debugging. Remove it.

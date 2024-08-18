@@ -27,6 +27,22 @@ struct runner *runner_init()
     return r;
 }
 
+void runner_destroy(struct runner *r)
+{
+    animation_destroy(r->lefta);
+    animation_destroy(r->righta);
+    animation_destroy(r->updowna);
+    animation_destroy(r->climblefta);
+    animation_destroy(r->climbrighta);
+    animation_destroy(r->diglefta);
+    animation_destroy(r->digrighta);
+    animation_destroy(r->falllefta);
+    animation_destroy(r->fallrighta);
+    animation_destroy(r->holelefta);
+    animation_destroy(r->holerighta);
+    free(r);
+}
+
 void runner_reset(struct runner *r)
 {
     r->x = r->sx;
@@ -61,9 +77,4 @@ struct animation *runner_state_animation(struct runner *r, enum runner_state s)
     default:
         die("illegal state");
     }
-}
-
-void runner_destroy(struct runner *runner)
-{
-    // TODO:
 }

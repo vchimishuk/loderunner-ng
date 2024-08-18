@@ -12,13 +12,13 @@ static SDL_Texture *textures[TEXTURE_SIZE] = {NULL};
 /*
  * Load texture image from file.
  * Calls die() on error.
- *
- * TODO: Make it private?
  */
-/* static */ SDL_Texture *texture_load(SDL_Renderer *renderer, char *file)
+SDL_Texture *texture_load(SDL_Renderer *renderer, char *file)
 {
     char *path = path_join(TEXTURES_DIR, file);
     SDL_Texture *texture = IMG_LoadTexture(renderer, path);
+    free(path);
+
     if (texture == NULL) {
         die("failed to load texture: %s", IMG_GetError());
     }
@@ -43,15 +43,15 @@ void texture_init(SDL_Renderer *renderer)
     textures[TEXTURE_TEXT] = texture_load(renderer, "text.png");
 }
 
-SDL_Texture *texture_get(enum texture t)
-{
-    return textures[t];
-}
-
 void texture_destroy()
 {
     for (int i = 0; i < TEXTURE_SIZE; i++) {
         SDL_DestroyTexture(textures[i]);
         textures[i] = NULL;
     }
+}
+
+SDL_Texture *texture_get(enum texture t)
+{
+    return textures[t];
 }

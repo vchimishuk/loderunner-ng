@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <SDL2/SDL_image.h>
 #include "texture.h"
 #include "animation.h"
 #include "exit.h"
@@ -59,7 +60,6 @@ static struct sprite *hole_sprite_init(int n, bool tall, int frames)
         frames);
 }
 
-// TODO: Check and make sure every animation is freed.
 struct animation *animation_init(enum animation_t t)
 {
     struct animation *a = xmalloc(sizeof(struct animation));
@@ -269,6 +269,15 @@ struct animation *animation_init(enum animation_t t)
     animation_reset(a);
 
     return a;
+}
+
+void animation_destroy(struct animation *a)
+{
+    for (struct sprite **s = a->sprites; *s != NULL; s++) {
+        free(*s);
+    }
+    free(a->sprites);
+    free(a);
 }
 
 /*

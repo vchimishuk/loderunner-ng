@@ -16,8 +16,8 @@ struct gold {
 };
 
 struct gold *gold_init(int x, int y);
-void gold_reset(struct gold *gold);
 void gold_destroy(struct gold *gold);
+void gold_reset(struct gold *gold);
 struct gold *gold_get(struct game *g, int x, int y);
 struct gold *gold_pickup(struct game *g, int x, int y, int tx, int ty);
 void gold_drop(struct gold *g, int x, int y);

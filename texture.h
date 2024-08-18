@@ -21,17 +21,9 @@ enum texture {
     TEXTURE_SIZE,
 };
 
-/* struct texture { */
-/*     SDL_Texture *sdl; */
-/*     int x; */
-/*     int y; */
-/*     int width; */
-/*     int height; */
-/* }; */
-
-void texture_init(SDL_Renderer *renderer);
-SDL_Texture *texture_get(enum texture t);
 SDL_Texture *texture_load(SDL_Renderer *renderer, char *file);
+void texture_init(SDL_Renderer *renderer);
 void texture_destroy();
+SDL_Texture *texture_get(enum texture t);
 
 #endif /* TEXTURE_H_ */

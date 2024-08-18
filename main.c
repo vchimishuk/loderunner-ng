@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -123,7 +124,7 @@ int main()
             break;
         }
 
-        struct level *lvl = load_level(1);
+        struct level *lvl = level_init(100);
         struct game *game = game_init(renderer, lvl);
         bool quit = false;
 
@@ -164,8 +165,9 @@ int main()
                     int l = lvl->num + 1;
 
                     game_destroy(game);
-                    // TODO: Free current level. destroy_level(lvl);
-                    lvl = load_level(l);
+                    level_destroy(lvl);
+
+                    lvl = level_init(l);
                     game = game_init(renderer, lvl);
                 } else {
                     goto eog;
@@ -188,18 +190,21 @@ int main()
         }
 
     eog:
+        bool won = game->won;
+
+        game_destroy(game);
+        level_destroy(lvl);
+
         if (quit) {
             break;
         }
-        if (!game->won) {
+        if (!won) {
             render_texture(renderer, "gameover.png");
         }
         if (key_wait()) {
             break;
         }
     }
-
-    /* game_destroy */
 
     texture_destroy();
 
