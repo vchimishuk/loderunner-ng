@@ -51,7 +51,7 @@ static void map_tile_destroy(struct map_tile *t)
 static void map_tile_reset(struct map_tile *tile)
 {
     tile->curt = tile->baset;
-    if (tile->cura != tile->basea) {
+    if (tile->cura != NULL && tile->cura != tile->basea) {
         animation_destroy(tile->cura);
     }
     tile->cura = tile->basea;
@@ -387,10 +387,9 @@ static void open_hladder(struct game *g)
 {
     for (int i = 0; i < MAP_HEIGHT; i++) {
         for (int j = 0; j < MAP_WIDTH; j++) {
-            if (g->lvl->map[i][j] == MAP_TILE_HLADDER) {
-                // TODO: Free empty tile g->map[i][j].
-                g->map[i][j] = map_tile_init(MAP_TILE_LADDER,
-                    ANIMATION_LADDER, i, j);
+            struct map_tile *t = g->map[i][j];
+            if (t->baset == MAP_TILE_LADDER && t->curt == MAP_TILE_EMPTY) {
+                map_tile_reset(t);
             }
         }
     }
@@ -523,8 +522,10 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                 game->guards[game->nguards - 1] = g;
                 break;
             case MAP_TILE_HLADDER:
-                // TODO:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_LADDER,
+                    ANIMATION_LADDER, i, j);
+                game->map[i][j]->curt = MAP_TILE_EMPTY;
+                game->map[i][j]->cura = NULL;
                 break;
             case MAP_TILE_LADDER:
                 game->map[i][j] = map_tile_init(MAP_TILE_LADDER,
