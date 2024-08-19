@@ -137,11 +137,10 @@ void text_sprites_destroy(struct sprite **s)
     free(s);
 }
 
-// TODO: Check correct usage.
 static bool empty_tile(struct game *game, int x, int y)
 {
-    // TODO: Support false brick.
-    return is_tile(game, x, y, MAP_TILE_EMPTY);
+    return is_tile(game, x, y, MAP_TILE_EMPTY)
+        || is_tile(game, x, y, MAP_TILE_FALSE);
 }
 
 struct guard *guard_at_point(struct game *g, int x, int y)
@@ -499,8 +498,8 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                 game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
                 break;
             case MAP_TILE_FALSE:
-                // TODO:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_FALSE,
+                    ANIMATION_BRICK, i, j);
                 break;
             case MAP_TILE_GOLD:
                 game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);

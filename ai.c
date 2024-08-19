@@ -350,12 +350,10 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
         bool climb = is_tilenh(game, x + dx, y, MAP_TILE_LADDER)
             || is_tilenh(game, x + dx, y, MAP_TILE_ROPE);
         // Can walk over the solid ground.
-        bool walk = (y < MAP_HEIGHT - 1)
-            && (is_tilenh(game, x + dx, y + 1, MAP_TILE_BRICK)
+        bool walk = (y == MAP_HEIGHT - 1)
+            || (is_tilenh(game, x + dx, y + 1, MAP_TILE_BRICK)
                 || is_tilenh(game, x + dx, y + 1, MAP_TILE_SOLID)
                 || is_tilenh(game, x + dx, y + 1, MAP_TILE_LADDER));
-        // Reached the bottom of the map so can walk on its edge.
-        bool ground = (y == MAP_HEIGHT - 1);
 
         x += dx;
 
@@ -376,7 +374,7 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
             rating = r;
         }
 
-        if (!climb && !walk && !ground) {
+        if (!climb && !walk) {
             // Falling down.
             // For me it looks like this complex check be replaced with
             // a simple falling down check. Strange that the original code
@@ -536,7 +534,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 guard->hole = true;
                 ty = 0;
                 ai_drop_gold_trapped(game, guard);
-            } else if (!can_move(game, x, y + 1)) {
+            } else if (!can_move(game, x, y + 1)
+                && !is_tile(game, x, y + 1, MAP_TILE_FALSE)) {
                 ty = 0;
             }
         }
