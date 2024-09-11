@@ -48,6 +48,18 @@ enum dir {
     DIR_UP,
 };
 
+// Return guard at x:y coordinate if there is any.
+static struct guard *guard_at_point(struct game *g, int x, int y)
+{
+    for (int i = 0; i < g->nguards; i++) {
+        if (g->guards[i]->x == x && g->guards[i]->y == y) {
+            return g->guards[i];
+        }
+    }
+
+    return NULL;
+}
+
 // Return random X coordinate to reborn guard at.
 static int ai_rand_rebornx()
 {
@@ -399,12 +411,12 @@ static bool ai_falling(struct game *game, struct guard *guard)
         return false;
     }
 
-    // TODO: Support walking on other guard's head.
     if (ty < 0
         || (y < MAP_HEIGHT - 1
             && !is_tile(game, x, y + 1, MAP_TILE_BRICK)
             && !is_tile(game, x, y + 1, MAP_TILE_SOLID)
-            && !is_tile(game, x, y + 1, MAP_TILE_LADDER))) {
+            && !is_tile(game, x, y + 1, MAP_TILE_LADDER)
+            && !guard_at_point(game, x, y + 1))) {
         return true;
     }
 
