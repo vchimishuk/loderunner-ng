@@ -73,6 +73,7 @@ void guard_destroy(struct guard *g)
     free(g);
 }
 
+// TODO: Looks like it is used only by guard_init(). Remove it then.
 void guard_reset(struct guard *g)
 {
     // TODO: Start position?
@@ -83,4 +84,6 @@ void guard_reset(struct guard *g)
     g->cura = g->lefta;
     g->state = GSTATE_LEFT;
     g->holey = -1;
+    g->gold = NULL;
+    g->goldholds = 0;
 }
