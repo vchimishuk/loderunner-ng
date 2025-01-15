@@ -41,10 +41,12 @@ static struct map_tile *map_tile_init(enum map_tile_t t, enum animation_t a,
 
 static void map_tile_destroy(struct map_tile *t)
 {
-    if (t->cura != t->basea) {
+    if (t->cura != t->basea && t->curt != MAP_TILE_EMPTY) {
         animation_destroy(t->cura);
     }
-    animation_destroy(t->basea);
+    if (t->baset != MAP_TILE_EMPTY) {
+        animation_destroy(t->basea);
+    }
     free(t);
 }
 
@@ -143,7 +145,7 @@ static bool empty_tile(struct game *game, int x, int y)
         || is_tile(game, x, y, MAP_TILE_FALSE);
 }
 
-struct guard *guard_at_point(struct game *g, int x, int y)
+static struct guard *guard_at_point(struct game *g, int x, int y)
 {
     for (int i = 0; i < g->nguards; i++) {
         if (g->guards[i]->x == x && g->guards[i]->y == y) {
@@ -495,21 +497,24 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                     ANIMATION_BRICK, i, j);
                 break;
             case MAP_TILE_EMPTY:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    ANIMATION_NONE, i, j);
                 break;
             case MAP_TILE_FALSE:
                 game->map[i][j] = map_tile_init(MAP_TILE_FALSE,
                     ANIMATION_BRICK, i, j);
                 break;
             case MAP_TILE_GOLD:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    ANIMATION_NONE, i, j);
                 if (game->ngold >= MAX_GOLD) {
                     die("gold limit exceeded");
                 }
                 game->gold[game->ngold++] = gold_init(j, i);
                 break;
             case MAP_TILE_GUARD:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    ANIMATION_NONE, i, j);
 
                 struct guard *g = guard_init();
                 g->x = j;
@@ -536,7 +541,8 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
                     ANIMATION_ROPE, i, j);
                 break;
             case MAP_TILE_RUNNER:
-                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY, 0, i, j);
+                game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
+                    ANIMATION_NONE, i, j);
                 game->runner->sx = j;
                 game->runner->sy = i;
                 runner_reset(game->runner);
