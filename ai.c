@@ -60,6 +60,15 @@ static struct guard *guard_at_point(struct game *g, int x, int y)
     return NULL;
 }
 
+// Return true if there is a guard present at x:y position and it not
+// the same guard as one represented by `me` argument.
+static bool occupied(struct game *game, struct guard *me, int x, int y)
+{
+    struct guard *g = guard_at_point(game, x, y);
+
+    return g != NULL && g != me;
+}
+
 // Return random X coordinate to reborn guard at.
 static int ai_rand_rebornx()
 {
@@ -511,7 +520,9 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             ty -= TILE_MAP_HEIGHT;
             ai_drop_gold(game, guard);
         }
-        if (ty >= 0 && !can_move(game, x, y + 1)) {
+        if (occupied(game, guard, x, y)
+            || (ty >= 0 && occupied(game, guard, x, y + 1))
+            || (ty >= 0 && !can_move(game, x, y + 1))) {
             move = false;
         } else {
             if (!is_tile(game, x, y, MAP_TILE_LADDER) &&
@@ -546,8 +557,9 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 guard->hole = true;
                 ty = 0;
                 ai_drop_gold_trapped(game, guard);
-            } else if (!can_move(game, x, y + 1)
-                && !is_tile(game, x, y + 1, MAP_TILE_FALSE)) {
+            } else if (occupied(game, guard, x, y)
+                || (!can_move(game, x, y + 1)
+                    && !is_tile(game, x, y + 1, MAP_TILE_FALSE))) {
                 ty = 0;
             }
         }
@@ -568,7 +580,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             guard->holey = -1;
             ai_drop_gold(game, guard);
         }
-        if (tx < 0 && !can_move(game, x - 1, y)) {
+        if (occupied(game, guard, x, y)
+            || (tx < 0 && !can_move(game, x - 1, y))) {
             move = false;
         } else {
             if (is_tile(game, x, y, MAP_TILE_ROPE)) {
@@ -591,7 +604,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             guard->holey = -1;
             ai_drop_gold(game, guard);
         }
-        if (tx > 0 && !can_move(game, x + 1, y)) {
+        if (occupied(game, guard, x, y)
+            || (tx > 0 && !can_move(game, x + 1, y))) {
             move = false;
         } else {
             if (is_tile(game, x, y, MAP_TILE_ROPE)) {
@@ -616,7 +630,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
 
         if (climb_out) {
             if (ai_hole(game, x, y) && guard->holey == y) {
-                if (can_move(game, x, y - 1)) {
+                if (!occupied(game, guard, x, y) && can_move(game, x, y - 1)) {
                     // Climb up from the hole if we can.
                     move = true;
                 }
@@ -625,7 +639,9 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 state = GSTATE_UPDOWN;
                 move = true;
             }
-        } else if (ty < 0 && (!onladder || !can_move(game, x, y - 1))) {
+        } else if (occupied(game, guard, x, y)
+            || (ty < 0 && occupied(game, guard, x, y - 1))
+            || (ty < 0 && (!onladder || !can_move(game, x, y - 1)))) {
             move = false;
         } else {
             state = GSTATE_UPDOWN;
