@@ -45,15 +45,13 @@ static void render_texture(SDL_Renderer *renderer, char *texture)
     SDL_DestroyTexture(t);
 }
 
-static void key_wait_for(int key)
+static int key_wait()
 {
     for (;;) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_KEYDOWN) {
-                if (event.key.keysym.sym == key) {
-                    return;
-                }
+                return event.key.keysym.sym;
             }
         }
 
@@ -61,27 +59,14 @@ static void key_wait_for(int key)
     }
 }
 
-static bool key_wait()
+static void key_wait_pause()
 {
-    for (;;) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                case SDLK_q:
-                case SDLK_ESCAPE:
-                    return true;
-                default:
-                    return false;
-                }
-            }
-        }
+    while (key_wait() != SDLK_p);
+}
 
-        SDL_Delay(FRAME_TIME);
-    }
-
-    return false;
+static bool key_quit(int key)
+{
+    return key == SDLK_q || key == SDLK_ESCAPE;
 }
 
 int main()
@@ -136,18 +121,19 @@ int main()
     for (;;) {
         SDL_RenderClear(renderer);
         render_texture(renderer, "start.png");
-        if (key_wait()) {
+        if (key_quit(key_wait())) {
             break;
         }
 
-        struct level *lvl = level_init(100);
+        struct level *lvl = level_init(1);
         struct game *game = game_init(renderer, lvl);
         bool quit = false;
+        bool start = false;
 
         double delay = 0;
         int key = 0;
         for (;;) {
-            unsigned long start = SDL_GetTicks64();
+            unsigned long starttime = SDL_GetTicks64();
 
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
@@ -156,11 +142,11 @@ int main()
                     switch (event.key.keysym.sym) {
                     case SDLK_q:
                     case SDLK_ESCAPE:
-                        quit = true;
+                        start = true;
                         goto eog;
                     case SDLK_p:
                         render_texture(renderer, "paused.png");
-                        key_wait_for(SDLK_p);
+                        key_wait_pause();
                         break;
                     default:
                         key = event.key.keysym.sym;
@@ -200,7 +186,7 @@ int main()
                 SDL_RenderPresent(renderer);
             }
 
-            double left = FRAME_TIME - (SDL_GetTicks64() - start);
+            double left = FRAME_TIME - (SDL_GetTicks64() - starttime);
             if (left > 0) {
                 delay += left;
                 long d = (long) delay;
@@ -215,13 +201,16 @@ int main()
         game_destroy(game);
         level_destroy(lvl);
 
+        if (start) {
+            continue;
+        }
         if (quit) {
             break;
         }
         if (!won) {
             render_texture(renderer, "gameover.png");
         }
-        if (key_wait()) {
+        if (key_quit(key_wait())) {
             break;
         }
     }
