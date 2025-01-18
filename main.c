@@ -45,6 +45,22 @@ static void render_texture(SDL_Renderer *renderer, char *texture)
     SDL_DestroyTexture(t);
 }
 
+static void key_wait_for(int key)
+{
+    for (;;) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == key) {
+                    return;
+                }
+            }
+        }
+
+        SDL_Delay(FRAME_TIME);
+    }
+}
+
 static bool key_wait()
 {
     for (;;) {
@@ -142,6 +158,10 @@ int main()
                     case SDLK_ESCAPE:
                         quit = true;
                         goto eog;
+                    case SDLK_p:
+                        render_texture(renderer, "paused.png");
+                        key_wait_for(SDLK_p);
+                        break;
                     default:
                         key = event.key.keysym.sym;
                         break;
