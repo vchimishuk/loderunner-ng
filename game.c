@@ -20,6 +20,11 @@
 #define RUNNER_DX 8
 #define RUNNER_DY 9
 
+static bool skip_keyhole(int key)
+{
+    return key == SDLK_RETURN || key == SDLK_ESCAPE;
+}
+
 static struct map_tile *map_tile_init(enum map_tile_t t, enum animation_t a,
     int row, int col)
 {
@@ -664,7 +669,7 @@ bool game_tick(struct game *game, int key)
     switch (game->state) {
     case GSTATE_END:
         if (game->keyhole > 0) {
-            if (key != 0) {
+            if (skip_keyhole(key)) {
                 game->keyhole = 0;
             } else {
                 game->keyhole -= KH_SPEED;
@@ -684,7 +689,7 @@ bool game_tick(struct game *game, int key)
         break;
     case GSTATE_START:
         if (game->keyhole < KH_MAX_RADIUS) {
-            if (key != 0) {
+            if (skip_keyhole(key)) {
                 game->keyhole = KH_MAX_RADIUS;
             } else {
                 game->keyhole += KH_SPEED;
