@@ -85,21 +85,23 @@ void keyhole_render(SDL_Renderer *renderer, int r)
     int y = r;
     int d = 3 - (2 * r);
 
-    // Mark circle pixels as visible.
-    do {
-        set_pixel(screen, xc, yc, x, y);
+    if (r > 0) {
+        // Mark circle pixels as visible.
+        do {
+            set_pixel(screen, xc, yc, x, y);
 
-        x += 1;
-        if (d < 0) {
-            d = d + (4 * x) + 6;
-        } else {
-            d = d + 4 * (x - y) + 10;
-            y -= 1;
-        }
-    } while (x <= y);
+            x += 1;
+            if (d < 0) {
+                d = d + (4 * x) + 6;
+            } else {
+                d = d + 4 * (x - y) + 10;
+                y -= 1;
+            }
+        } while (x <= y);
 
-    // Fill circle inside with visible pixels.
-    floodfill(screen, xc, yc);
+        // Fill circle inside with visible pixels.
+        floodfill(screen, xc, yc);
+    }
 
     // And render pseudo-pixels.
     for (int i = 0; i < KH_SCREEN_WIDTH; i++) {
