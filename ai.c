@@ -5,12 +5,15 @@
 #include "guard.h"
 #include "level.h"
 #include "phys.h"
+#include "sound.h"
 #include "tile.h"
 
 // TODO: Should we join ai.c and guard.c.
 
 // TODO: Looks like this is the max number of guards possible.
 //       Update another define.
+//
+// Move Policy configuration.
 #define MP_NGUARDS 12
 #define MP_NMOVES 6
 
@@ -557,6 +560,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 guard->hole = true;
                 ty = 0;
                 ai_drop_gold_trapped(game, guard);
+                sound_play(SOUND_TRAP);
             } else if (occupied(game, guard, x, y)
                 || (!can_move(game, x, y + 1)
                     && !is_tile(game, x, y + 1, MAP_TILE_FALSE))) {
@@ -753,6 +757,7 @@ void ai_tick(struct game *game)
             if (animation_tick(g->cura)) {
                 g->state = GSTATE_FALL_RIGHT;
                 g->cura = guard_state_animation(g, GSTATE_FALL_RIGHT);
+                sound_play(SOUND_REBORN);
             }
         }
 

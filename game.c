@@ -11,6 +11,7 @@
 #include "phys.h"
 #include "render.h"
 #include "runner.h"
+#include "sound.h"
 #include "texture.h"
 #include "tile.h"
 #include "xmalloc.h"
@@ -207,11 +208,13 @@ static void runner_tick(struct game *game, int key)
         // Continue falling process or start falling if runner is stending on
         // empty tile.
 
-        if (state == RSTATE_FALL_LEFT || state == RSTATE_CLIMB_LEFT
-            || state == RSTATE_LEFT) {
+        // Start falling.
+        if (state == RSTATE_LEFT || state == RSTATE_CLIMB_LEFT) {
             state = RSTATE_FALL_LEFT;
-        } else {
+            sound_play(SOUND_FALL);
+        } else if (state == RSTATE_RIGHT || state == RSTATE_CLIMB_RIGHT) {
             state = RSTATE_FALL_RIGHT;
+            sound_play(SOUND_FALL);
         }
         move = true;
         tx = 0;
@@ -231,6 +234,8 @@ static void runner_tick(struct game *game, int key)
             } else {
                 state = RSTATE_CLIMB_RIGHT;
             }
+            sound_stop();
+            sound_play(SOUND_DOWN);
         } else if (ty >= 0
             && ((!empty_tile(game, x, y + 1)
                     && !is_tile(game, x, y + 1, MAP_TILE_ROPE))
@@ -238,6 +243,8 @@ static void runner_tick(struct game *game, int key)
             // Stop, we have reached some solid ground.
             ty = 0;
             state = RSTATE_STOP;
+            sound_stop();
+            sound_play(SOUND_DOWN);
         }
     } else if (key != 0) {
         switch (key) {
@@ -310,6 +317,7 @@ static void runner_tick(struct game *game, int key)
                     } else {
                         state = RSTATE_FALL_LEFT;
                     }
+                    sound_play(SOUND_FALL);
                 } else {
                     state = RSTATE_UPDOWN;
                 }
@@ -331,6 +339,7 @@ static void runner_tick(struct game *game, int key)
                 t->curt = MAP_TILE_EMPTY;
                 state = RSTATE_DIG_RIGHT;
                 animation_reset(runner->holerighta);
+                sound_play(SOUND_DIG);
                 runner->tx = 0;
                 move = true;
             } else {
@@ -350,6 +359,7 @@ static void runner_tick(struct game *game, int key)
                 t->curt = MAP_TILE_EMPTY;
                 state = RSTATE_DIG_LEFT;
                 animation_reset(runner->holelefta);
+                sound_play(SOUND_DIG);
                 runner->tx = 0;
                 move = true;
             } else {
@@ -413,20 +423,22 @@ static void detect_collision(struct game *game)
     struct gold *g = gold_pickup(game, r->x, r->y, r->tx, r->ty);
     if (g != NULL) {
         r->ngold++;
+        sound_play(SOUND_GOLD);
     }
 
     // All gold have been picked up. Show hidden ladders
     // and let the runner finish current game.
     if (game->ngold == r->ngold) {
         open_hladder(game);
+        sound_play(SOUND_HLADDER);
     }
 
     // Runner's death: walled up in a wall or hit by a guard.
     struct guard *guard = guard_at_point(game, r->x, r->y);
-    if (is_tile(game, r->x, r->y, MAP_TILE_BRICK)
-        || guard != NULL) {
+    if (is_tile(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
+        sound_play(SOUND_DEAD);
     }
 
     // Runner has reached top of the screen.

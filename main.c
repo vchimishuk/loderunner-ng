@@ -4,13 +4,15 @@
 #include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include "SDL2/SDL_mixer.h"
 #include "exit.h"
 #include "game.h"
 #include "level.h"
 #include "path.h"
+#include "render.h"
+#include "sound.h"
 #include "texture.h"
 #include "tile.h"
-#include "render.h"
 #include "xmalloc.h"
 
 #define SCREEN_WIDTH (MAP_WIDTH * TILE_MAP_WIDTH)
@@ -73,12 +75,21 @@ int main()
 {
     srandom(time(NULL));
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         die("failed to initialize SDL: %s", SDL_GetError());
     }
 
     if (IMG_Init(IMG_INIT_PNG) == 0) {
         die("failed to initialize SDL_image: %s", SDL_GetError());
+    }
+
+    int mxflags = MIX_INIT_OGG;
+    if (Mix_Init(mxflags) != mxflags) {
+        die("failed to initialize SDL_mixer: %s", Mix_GetError());
+    }
+
+    if (Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 2048) == -1) {
+        die("failed to open audio device: %s", Mix_GetError());
     }
 
     SDL_Window *window = SDL_CreateWindow("Lode Runner",
@@ -105,6 +116,7 @@ int main()
     // blit(renderer, brick, 100, 100);
 
     texture_init(renderer);
+    sound_init();
 
 
     /* struct tile_text *t = xmalloc(sizeof(struct tile_text)); */
@@ -216,6 +228,7 @@ int main()
     }
 
     texture_destroy();
+    sound_destroy();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
