@@ -6,6 +6,7 @@ enum sound {
     SOUND_DIG,
     SOUND_DOWN,
     SOUND_FALL,
+    SOUND_FINISH,
     SOUND_GOLD,
     SOUND_HLADDER,
     SOUND_REBORN,

@@ -447,6 +447,7 @@ static void detect_collision(struct game *game)
 
         game->won = true;
         game->state = GSTATE_END;
+        sound_play(SOUND_FINISH);
     }
 }
 
