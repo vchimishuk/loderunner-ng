@@ -597,9 +597,18 @@ void game_destroy(struct game *game)
         ground_tile_destroy(game->ground[i]);
     }
 
-    // TODO: Free info_score.
-    // TODO: Free info_lives.
-    // TODO: Free info_level.
+    if (game->info_score != NULL) {
+        text_sprites_destroy(game->info_score);
+        game->info_score = NULL;
+    }
+    if (game->info_lives != NULL) {
+        text_sprites_destroy(game->info_lives);
+        game->info_lives = NULL;
+    }
+    if (game->info_level != NULL) {
+        text_sprites_destroy(game->info_level);
+        game->info_level = NULL;
+    }
 
     runner_destroy(game->runner);
 
@@ -745,7 +754,7 @@ void game_score(struct game *game, int score)
 
     // Free score display textures to request its update.
     if (game->info_score != NULL) {
-        // TODO: Free info_score.
+        text_sprites_destroy(game->info_score);
         game->info_score = NULL;
     }
 }
