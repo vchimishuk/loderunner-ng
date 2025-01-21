@@ -4,6 +4,11 @@
 #define MAP_WIDTH 28
 #define MAP_HEIGHT 16
 
+#define SCORE_DEAD 75
+#define SCORE_FINISH 1500
+#define SCORE_GOLD 250
+#define SCORE_TRAP 75
+
 enum map_tile_t {
     MAP_TILE_BRICK = '#',
     MAP_TILE_EMPTY = ' ',

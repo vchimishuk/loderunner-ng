@@ -423,14 +423,15 @@ static void detect_collision(struct game *game)
     struct gold *g = gold_pickup(game, r->x, r->y, r->tx, r->ty);
     if (g != NULL) {
         r->ngold++;
+        game_score(game, SCORE_GOLD);
         sound_play(SOUND_GOLD);
-    }
 
-    // All gold have been picked up. Show hidden ladders
-    // and let the runner finish current game.
-    if (game->ngold == r->ngold) {
-        open_hladder(game);
-        sound_play(SOUND_HLADDER);
+        // All gold have been picked up. Show hidden ladders
+        // and let the runner finish current game.
+        if (r->ngold == game->ngold) {
+            open_hladder(game);
+            sound_play(SOUND_HLADDER);
+        }
     }
 
     // Runner's death: walled up in a wall or hit by a guard.
@@ -447,6 +448,7 @@ static void detect_collision(struct game *game)
 
         game->won = true;
         game->state = GSTATE_END;
+        game_score(game, SCORE_FINISH);
         sound_play(SOUND_FINISH);
     }
 }
@@ -503,6 +505,7 @@ struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
     game->info_level = NULL;
     game->ngold = 0;
     game->won = false;
+    game->score = 0;
     game->runner = runner_init();
     game->guards = xmalloc(sizeof(struct guard *) * MAX_GUARDS);
     game->nguards = 0;
@@ -642,7 +645,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     int infoy = MAP_HEIGHT * TILE_MAP_HEIGHT + TILE_GROUND_HEIGHT;
     if (game->info_score == NULL) {
         char buf[16];
-        snprintf(buf, 16, "SCORE%07d", 100500);
+        snprintf(buf, 16, "SCORE%07d", game->score);
         game->info_score = text_sprites_init(buf);
 
     }
@@ -733,5 +736,16 @@ void game_discard_gold(struct game *game, struct gold *gold)
             game->ngold--;
             break;
         }
+    }
+}
+
+void game_score(struct game *game, int score)
+{
+    game->score += score;
+
+    // Free score display textures to request its update.
+    if (game->info_score != NULL) {
+        // TODO: Free info_score.
+        game->info_score = NULL;
     }
 }

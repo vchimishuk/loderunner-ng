@@ -560,6 +560,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 guard->hole = true;
                 ty = 0;
                 ai_drop_gold_trapped(game, guard);
+                game_score(game, SCORE_TRAP);
                 sound_play(SOUND_TRAP);
             } else if (occupied(game, guard, x, y)
                 || (!can_move(game, x, y + 1)
@@ -757,6 +758,7 @@ void ai_tick(struct game *game)
             if (animation_tick(g->cura)) {
                 g->state = GSTATE_FALL_RIGHT;
                 g->cura = guard_state_animation(g, GSTATE_FALL_RIGHT);
+                game_score(game, SCORE_DEAD);
                 sound_play(SOUND_REBORN);
             }
         }

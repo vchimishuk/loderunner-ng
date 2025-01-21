@@ -181,12 +181,14 @@ int main()
                     // TODO: Handle last level situation.
                     //       goto eog;
                     int l = lvl->num + 1;
+                    int score = game->score;
 
                     game_destroy(game);
                     level_destroy(lvl);
 
                     lvl = level_init(l);
                     game = game_init(renderer, lvl);
+                    game_score(game, score);
                 } else {
                     goto eog;
                 }
