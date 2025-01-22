@@ -12,7 +12,6 @@
 #include "render.h"
 #include "sound.h"
 #include "texture.h"
-#include "tile.h"
 #include "xmalloc.h"
 
 #define SCREEN_WIDTH (MAP_WIDTH * TILE_MAP_WIDTH)
@@ -22,7 +21,7 @@
 #define FPS 23
 #define FRAME_TIME (1000.0 / FPS)
 
-
+// Render texture at the center of the screen.
 static void render_texture(SDL_Renderer *renderer, char *texture)
 {
     SDL_Texture *t = texture_load(renderer, texture);
@@ -47,7 +46,7 @@ static void render_texture(SDL_Renderer *renderer, char *texture)
     SDL_DestroyTexture(t);
 }
 
-static int key_wait()
+static int key_wait(void)
 {
     for (;;) {
         SDL_Event event;
@@ -61,7 +60,7 @@ static int key_wait()
     }
 }
 
-static void key_wait_pause()
+static void key_wait_pause(void)
 {
     while (key_wait() != SDLK_p);
 }
@@ -71,7 +70,7 @@ static bool key_quit(int key)
     return key == SDLK_q || key == SDLK_ESCAPE;
 }
 
-int main()
+int main(void)
 {
     srandom(time(NULL));
 
@@ -138,9 +137,10 @@ int main()
         }
 
         struct level *lvl = level_init(1);
-        struct game *game = game_init(renderer, lvl);
+        struct game *game = game_init(lvl);
         bool quit = false;
         bool start = false;
+        bool won = false;
 
         double delay = 0;
         int key = 0;
@@ -187,7 +187,7 @@ int main()
                     level_destroy(lvl);
 
                     lvl = level_init(l);
-                    game = game_init(renderer, lvl);
+                    game = game_init(lvl);
                     game_score(game, score);
                 } else {
                     goto eog;
@@ -210,7 +210,7 @@ int main()
         }
 
     eog:
-        bool won = game->won;
+        won = game->won;
 
         game_destroy(game);
         level_destroy(lvl);

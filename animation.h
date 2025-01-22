@@ -5,6 +5,13 @@
 #include <SDL2/SDL.h>
 #include "texture.h"
 
+#define TILE_GROUND_HEIGHT 20
+#define TILE_GROUND_WIDTH 40
+#define TILE_MAP_HEIGHT 44
+#define TILE_MAP_WIDTH 40
+#define TILE_TEXT_HEIGHT 44
+#define TILE_TEXT_WIDTH 40
+
 enum animation_t {
     ANIMATION_BRICK,
     ANIMATION_GOLD,

@@ -13,7 +13,6 @@
 #include "runner.h"
 #include "sound.h"
 #include "texture.h"
-#include "tile.h"
 #include "xmalloc.h"
 
 // TODO: Rename to something like MOVE_DX/MOVE_DY.
@@ -494,7 +493,7 @@ static void game_reset(struct game *game)
     }
 }
 
-struct game *game_init(SDL_Renderer *renderer, struct level *lvl)
+struct game *game_init(struct level *lvl)
 {
     struct game *game = xmalloc(sizeof(struct game));
     game->state = GSTATE_START;

@@ -61,7 +61,6 @@ enum game_state {
 struct game {
     enum game_state state;
     float keyhole;
-    // TODO: Looks like lvl is not used.
     struct level *lvl;
     int lives;
     struct map_tile *map[MAP_HEIGHT][MAP_WIDTH];
@@ -81,7 +80,7 @@ struct game {
     int level_score_iter;
 };
 
-struct game *game_init(SDL_Renderer *renderer, struct level *lvl);
+struct game *game_init(struct level *lvl);
 bool game_tick(struct game *game, int key);
 void game_render(struct game *game, SDL_Renderer *renderer);
 void game_destroy(struct game *game);

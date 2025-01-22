@@ -1,6 +1,5 @@
 #include "game.h"
 #include "gold.h"
-#include "tile.h"
 #include "xmalloc.h"
 
 struct gold *gold_init(int x, int y)

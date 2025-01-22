@@ -23,7 +23,7 @@ enum texture {
 
 SDL_Texture *texture_load(SDL_Renderer *renderer, char *file);
 void texture_init(SDL_Renderer *renderer);
-void texture_destroy();
+void texture_destroy(void);
 SDL_Texture *texture_get(enum texture t);
 
 #endif /* TEXTURE_H_ */

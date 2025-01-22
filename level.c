@@ -88,14 +88,3 @@ void level_destroy(struct level *l)
 {
     free(l);
 }
-
-// TODO: Just for debugging. Remove it.
-void print_level(struct level *lvl)
-{
-    for (int i = 0; i < MAP_HEIGHT; i++) {
-        for (int j = 0; j < MAP_WIDTH; j++) {
-            printf("%c", lvl->map[i][j]);
-        }
-        printf("\n");
-    }
-}

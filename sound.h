@@ -14,8 +14,8 @@ enum sound {
     SOUND_X_SIZE,
 };
 
-void sound_init();
-void sound_destroy();
+void sound_init(void);
+void sound_destroy(void);
 void sound_play(enum sound e);
 void sound_stop(void);
 

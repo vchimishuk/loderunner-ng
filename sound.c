@@ -29,7 +29,7 @@ static Mix_Music *load(enum sound snd)
     return m;
 }
 
-void sound_init()
+void sound_init(void)
 {
     sounds[SOUND_DEAD] = load(SOUND_DEAD);
     sounds[SOUND_DIG] = load(SOUND_DIG);
@@ -42,7 +42,7 @@ void sound_init()
     sounds[SOUND_TRAP] = load(SOUND_TRAP);
 }
 
-void sound_destroy()
+void sound_destroy(void)
 {
     Mix_FreeMusic(sounds[SOUND_DEAD]);
     Mix_FreeMusic(sounds[SOUND_DIG]);

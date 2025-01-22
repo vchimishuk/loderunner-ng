@@ -71,7 +71,7 @@ struct guard {
     int goldholds;
 };
 
-struct guard *guard_init();
+struct guard *guard_init(void);
 void guard_destroy(struct guard *g);
 void guard_reset(struct guard *g);
 struct animation *guard_state_animation(struct guard *g, enum guard_state s);

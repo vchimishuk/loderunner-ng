@@ -6,7 +6,6 @@
 #include "level.h"
 #include "phys.h"
 #include "sound.h"
-#include "tile.h"
 
 // TODO: Should we join ai.c and guard.c.
 
@@ -73,7 +72,7 @@ static bool occupied(struct game *game, struct guard *me, int x, int y)
 }
 
 // Return random X coordinate to reborn guard at.
-static int ai_rand_rebornx()
+static int ai_rand_rebornx(void)
 {
     static int row[MAP_WIDTH - 1];
     static int idx = MAP_WIDTH;
@@ -95,7 +94,7 @@ static int ai_rand_rebornx()
     return row[idx++];
 }
 
-static int ai_rand_goldholds()
+static int ai_rand_goldholds(void)
 {
     return (random() % 26) + 11; // 11..36
 }

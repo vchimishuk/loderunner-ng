@@ -4,8 +4,6 @@
 #include "animation.h"
 #include "exit.h"
 #include "xmalloc.h"
-#include "tile.h"
-
 
 static struct sprite *animation_sprite_init(enum texture tx, int x, int y,
     int w, int h, int frames)

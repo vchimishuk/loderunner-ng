@@ -43,7 +43,7 @@ void texture_init(SDL_Renderer *renderer)
     textures[TEXTURE_TEXT] = texture_load(renderer, "text.png");
 }
 
-void texture_destroy()
+void texture_destroy(void)
 {
     for (int i = 0; i < TEXTURE_SIZE; i++) {
         SDL_DestroyTexture(textures[i]);

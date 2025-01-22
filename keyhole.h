@@ -3,7 +3,6 @@
 
 #include <SDL2/SDL.h>
 
-// TODO:
 #define KH_PIXEL 8
 // Original game takes about 5 seconds to show the scene.
 #define KH_SPEED 0.7

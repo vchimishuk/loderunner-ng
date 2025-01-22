@@ -12,7 +12,7 @@ include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 include_directories(${SDL2_SOUND_INCLUDE_DIR})
 
-add_executable(loderunner
+add_executable(loderunner-ng
                    ai.c
                    animation.c
                    exit.c
@@ -28,9 +28,8 @@ add_executable(loderunner
                    runner.c
                    sound.c
                    texture.c
-                   tile.c
                    xmalloc.c)
-target_link_libraries(loderunner PRIVATE SDL2::SDL2main)
-target_link_libraries(loderunner PRIVATE SDL2_image::SDL2_image)
-target_link_libraries(loderunner PRIVATE SDL2_mixer::SDL2_mixer)
-target_link_libraries(loderunner PRIVATE SDL2::SDL2)
+target_link_libraries(loderunner-ng PRIVATE SDL2::SDL2main)
+target_link_libraries(loderunner-ng PRIVATE SDL2_image::SDL2_image)
+target_link_libraries(loderunner-ng PRIVATE SDL2_mixer::SDL2_mixer)
+target_link_libraries(loderunner-ng PRIVATE SDL2::SDL2)

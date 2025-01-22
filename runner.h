@@ -61,7 +61,7 @@ struct runner {
     int ngold;
 };
 
-struct runner *runner_init();
+struct runner *runner_init(void);
 void runner_destroy(struct runner *r);
 void runner_reset(struct runner *r);
 struct animation *runner_state_animation(struct runner *r, enum runner_state s);

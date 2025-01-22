@@ -2,7 +2,6 @@
 #include "guard.h"
 #include "phys.h"
 #include "texture.h"
-#include "tile.h"
 #include "xmalloc.h"
 
 struct animation *guard_state_animation(struct guard *g, enum guard_state s)
@@ -35,7 +34,7 @@ struct animation *guard_state_animation(struct guard *g, enum guard_state s)
     }
 }
 
-struct guard *guard_init()
+struct guard *guard_init(void)
 {
     struct guard *g = xmalloc(sizeof(struct guard));
     g->x = 0;

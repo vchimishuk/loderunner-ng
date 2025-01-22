@@ -2,10 +2,9 @@
 #include "exit.h"
 #include "runner.h"
 #include "texture.h"
-#include "tile.h"
 #include "xmalloc.h"
 
-struct runner *runner_init()
+struct runner *runner_init(void)
 {
     struct runner *r = xmalloc(sizeof(struct runner));
     r->sx = 0;
