@@ -75,7 +75,10 @@ struct game {
     struct gold *gold[MAX_GOLD];
     int ngold;
     bool won;
+    // Current user score.
     int score;
+    // Storage for iteration counter when accruing level bonus scores.
+    int level_score_iter;
 };
 
 struct game *game_init(SDL_Renderer *renderer, struct level *lvl);

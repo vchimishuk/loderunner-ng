@@ -5,7 +5,7 @@
 #define MAP_HEIGHT 16
 
 #define SCORE_DEAD 75
-#define SCORE_FINISH 1500
+#define SCORE_FINISH_STEP 100
 #define SCORE_GOLD 250
 #define SCORE_TRAP 75
 

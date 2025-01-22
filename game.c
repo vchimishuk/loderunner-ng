@@ -448,7 +448,8 @@ static void detect_collision(struct game *game)
 
         game->won = true;
         game->state = GSTATE_END;
-        game_score(game, SCORE_FINISH);
+        game->keyhole = KH_MAX_RADIUS;
+        game->level_score_iter = 15;
         sound_play(SOUND_FINISH);
     }
 }
@@ -693,7 +694,10 @@ bool game_tick(struct game *game, int key)
 {
     switch (game->state) {
     case GSTATE_END:
-        if (game->keyhole > 0) {
+        if (game->level_score_iter > 0) {
+            game_score(game, SCORE_FINISH_STEP);
+            game->level_score_iter--;
+        } else if (game->keyhole > 0) {
             if (skip_keyhole(key)) {
                 game->keyhole = 0;
             } else {
@@ -703,7 +707,10 @@ bool game_tick(struct game *game, int key)
             return true;
         } else {
             game->lives--;
-            game->info_lives = NULL; // TODO: Free memory / reset.
+            if (game->info_lives != NULL) {
+                text_sprites_destroy(game->info_lives);
+                game->info_lives = NULL;
+            }
             if (game->lives > 0) {
                 game_reset(game);
                 game->state = GSTATE_START;
