@@ -9,11 +9,8 @@
 
 // TODO: Should we join ai.c and guard.c.
 
-// TODO: Looks like this is the max number of guards possible.
-//       Update another define.
-//
 // Move Policy configuration.
-#define MP_NGUARDS 12
+#define MP_NGUARDS 12 // Same as game.h:MAX_GUARDS actually.
 #define MP_NMOVES 6
 
 // Algorithm traces possible routes and calculate rating (score) for every
@@ -681,8 +678,9 @@ void ai_reborn(struct game *game, struct guard *guard)
     int xs = x;
 
     // Avoid guard to be born in holes or where gold lays.
-    // TODO: Add gold check.
-    while (!is_tile(game, x, y, MAP_TILE_EMPTY) || ai_hole(game, x, y)) {
+    while (!is_tile(game, x, y, MAP_TILE_EMPTY) || ai_hole(game, x, y)
+        || gold_get(game, x, y) != NULL) {
+
         x = ai_rand_rebornx();
         if (x == xs) {
             // We have tried all positions this row, let's move to the next one.

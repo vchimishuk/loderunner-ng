@@ -8,7 +8,7 @@
 #include "runner.h"
 
 #define MAX_GOLD 16
-#define MAX_GUARDS 8
+#define MAX_GUARDS 12
 
 /*
  * Game map single tile representation.
