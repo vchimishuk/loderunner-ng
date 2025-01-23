@@ -127,7 +127,12 @@ struct animation *animation_init(enum animation_t t)
         break;
     case ANIMATION_GUARD_TRAP_LEFT:
         a->sprites = sprites_init(7);
-        a->sprites[0] = guard_sprite_init(30, 51);
+        // LodeRunner TotalRecall uses totally 18 frames with 0.3 speed.
+        // In this case we should have 60 frames in total instead of original
+        // 18 (18 * 3.33333) but it looks too long comparing to TotalRecal.
+        // So, I simply tune number of frames here to make it have the same
+        // speed.
+        a->sprites[0] = guard_sprite_init(30, 37);
         a->sprites[1] = guard_sprite_init(31, 3);
         a->sprites[2] = guard_sprite_init(32, 3);
         a->sprites[3] = guard_sprite_init(31, 3);
@@ -137,7 +142,7 @@ struct animation *animation_init(enum animation_t t)
         break;
     case ANIMATION_GUARD_TRAP_RIGHT:
         a->sprites = sprites_init(7);
-        a->sprites[0] = guard_sprite_init(8, 51);
+        a->sprites[0] = guard_sprite_init(8, 37);
         a->sprites[1] = guard_sprite_init(9, 3);
         a->sprites[2] = guard_sprite_init(10, 3);
         a->sprites[3] = guard_sprite_init(9, 3);
@@ -236,16 +241,16 @@ struct animation *animation_init(enum animation_t t)
         break;
     case ANIMATION_RUNNER_LEFT:
         a->sprites = sprites_init(4);
-        a->sprites[0] = runner_sprite_init(3, 2);
-        a->sprites[1] = runner_sprite_init(4, 2);
-        a->sprites[2] = runner_sprite_init(5, 2);
+        a->sprites[0] = runner_sprite_init(3, 1);
+        a->sprites[1] = runner_sprite_init(4, 1);
+        a->sprites[2] = runner_sprite_init(5, 1);
         a->sprites[3] = NULL;
         break;
     case ANIMATION_RUNNER_RIGHT:
         a->sprites = sprites_init(4);
-        a->sprites[0] = runner_sprite_init(0, 2);
-        a->sprites[1] = runner_sprite_init(1, 2);
-        a->sprites[2] = runner_sprite_init(2, 2);
+        a->sprites[0] = runner_sprite_init(0, 1);
+        a->sprites[1] = runner_sprite_init(1, 1);
+        a->sprites[2] = runner_sprite_init(2, 1);
         a->sprites[3] = NULL;
         break;
     case ANIMATION_RUNNER_UPDOWN:
