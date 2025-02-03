@@ -56,6 +56,14 @@ void sound_destroy(void)
     Mix_Quit();
 }
 
+void sound_pause(void)
+{
+    static int paused = 0;
+
+    paused = !paused;
+    Mix_PauseAudio(paused);
+}
+
 void sound_play(enum sound snd)
 {
     Mix_PlayMusic(sounds[snd], 0);

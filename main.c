@@ -160,10 +160,12 @@ int main(void)
                         goto eog;
                     case SDLK_p:
                         render_texture(renderer, "paused.png");
+                        sound_pause();
                         key_wait_pause();
                         // Pause breaks timing calculations, start over.
                         stime = SDL_GetTicks64();
                         delay = FRAME_TIME;
+                        sound_pause();
                         break;
                     default:
                         key = event.key.keysym.sym;
@@ -214,6 +216,7 @@ int main(void)
     eog:
         won = game->won;
 
+        sound_stop();
         game_destroy(game);
         level_destroy(lvl);
 
