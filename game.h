@@ -86,5 +86,6 @@ void game_render(struct game *game, SDL_Renderer *renderer);
 void game_destroy(struct game *game);
 void game_discard_gold(struct game *game, struct gold *gold);
 void game_score(struct game *game, int score);
+struct guard *game_guard_get(struct game *g, int x, int y);
 
 #endif /* GAME_H_ */

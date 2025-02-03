@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "ai.h"
 #include "exit.h"
+#include "game.h"
 #include "gold.h"
 #include "guard.h"
 #include "level.h"
@@ -47,23 +48,11 @@ enum dir {
     DIR_UP,
 };
 
-// Return guard at x:y coordinate if there is any.
-static struct guard *guard_at_point(struct game *g, int x, int y)
-{
-    for (int i = 0; i < g->nguards; i++) {
-        if (g->guards[i]->x == x && g->guards[i]->y == y) {
-            return g->guards[i];
-        }
-    }
-
-    return NULL;
-}
-
 // Return true if there is a guard present at x:y position and it not
 // the same guard as one represented by `me` argument.
 static bool occupied(struct game *game, struct guard *me, int x, int y)
 {
-    struct guard *g = guard_at_point(game, x, y);
+    struct guard *g = game_guard_get(game, x, y);
 
     return g != NULL && g != me;
 }
@@ -424,7 +413,7 @@ static bool ai_falling(struct game *game, struct guard *guard)
             && !is_tile(game, x, y + 1, MAP_TILE_BRICK)
             && !is_tile(game, x, y + 1, MAP_TILE_SOLID)
             && !is_tile(game, x, y + 1, MAP_TILE_LADDER)
-            && !guard_at_point(game, x, y + 1))) {
+            && !game_guard_get(game, x, y + 1))) {
         return true;
     }
 

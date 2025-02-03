@@ -15,10 +15,8 @@
 #include "texture.h"
 #include "xmalloc.h"
 
-// TODO: Rename to something like MOVE_DX/MOVE_DY.
-//       Move into the place it can be included by ai.h too?
-#define RUNNER_DX 8
-#define RUNNER_DY 9
+static const int RUNNER_DX = 8;
+static const int RUNNER_DY = 9;
 
 static bool skip_keyhole(int key)
 {
@@ -116,7 +114,7 @@ static struct sprite **text_sprites_init(char *s)
         } else if (ch >= '0' && ch <= '9') {
             idx = 0 + ch - '0';
         } else {
-            die("TODO:");
+            die("invalid sprite");
         }
         int r = idx / 10;
         int c = idx % 10;
@@ -150,17 +148,6 @@ static bool empty_tile(struct game *game, int x, int y)
         || is_tile(game, x, y, MAP_TILE_FALSE);
 }
 
-static struct guard *guard_at_point(struct game *g, int x, int y)
-{
-    for (int i = 0; i < g->nguards; i++) {
-        if (g->guards[i]->x == x && g->guards[i]->y == y) {
-            return g->guards[i];
-        }
-    }
-
-    return NULL;
-}
-
 static void runner_tick(struct game *game, int key)
 {
     struct runner *runner = game->runner;
@@ -178,7 +165,7 @@ static void runner_tick(struct game *game, int key)
         bool replay = animation_tick(runner->cura);
         int gx = state == RSTATE_DIG_LEFT ? runner->x - 1 : runner->x + 1;
         int gy = runner->y;
-        struct guard *g = guard_at_point(game, gx, gy);
+        struct guard *g = game_guard_get(game, gx, gy);
 
         int hx = state == RSTATE_DIG_LEFT ? runner->x - 1 : runner->x + 1;
         int hy = runner->y + 1;
@@ -203,7 +190,7 @@ static void runner_tick(struct game *game, int key)
         || (empty_tile(game, x, y + 1)
             && !is_tile(game, x, y, MAP_TILE_ROPE)
             && !is_tile(game, x, y, MAP_TILE_LADDER)
-            && guard_at_point(game, x, y + 1) == NULL)) {
+            && game_guard_get(game, x, y + 1) == NULL)) {
         // Continue falling process or start falling if runner is stending on
         // empty tile.
 
@@ -238,7 +225,7 @@ static void runner_tick(struct game *game, int key)
         } else if (ty >= 0
             && ((!empty_tile(game, x, y + 1)
                     && !is_tile(game, x, y + 1, MAP_TILE_ROPE))
-                || guard_at_point(game, x, y + 1) != NULL)) {
+                || game_guard_get(game, x, y + 1) != NULL)) {
             // Stop, we have reached some solid ground.
             ty = 0;
             state = RSTATE_STOP;
@@ -324,12 +311,11 @@ static void runner_tick(struct game *game, int key)
             }
             break;
         case SDLK_x:
-            // TODO: Do not dig if guard is too close.
-
             // Dig only bricks with empty gold-free space above.
             if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
                 && is_tile(game, x + 1, y, MAP_TILE_EMPTY)
-                && gold_get(game, x + 1, y) == NULL) {
+                && gold_get(game, x + 1, y) == NULL
+                && game_guard_get(game, x + 1, y) == NULL) {
 
                 struct map_tile *t = game->map[runner->y + 1][runner->x + 1];
                 // Make sure we do not need to free animation.
@@ -349,7 +335,8 @@ static void runner_tick(struct game *game, int key)
             // Dig only bricks with empty space above.
             if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
                 && is_tile(game, x - 1, y, MAP_TILE_EMPTY)
-                && gold_get(game, x - 1, y) == NULL) {
+                && gold_get(game, x - 1, y) == NULL
+                && game_guard_get(game, x + 1, y) == NULL) {
 
                 struct map_tile *t = game->map[runner->y + 1][runner->x - 1];
                 // Make sure we do not need to free animation.
@@ -434,7 +421,7 @@ static void detect_collision(struct game *game)
     }
 
     // Runner's death: walled up in a wall or hit by a guard.
-    struct guard *guard = guard_at_point(game, r->x, r->y);
+    struct guard *guard = game_guard_get(game, r->x, r->y);
     if (is_tile(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
@@ -763,4 +750,17 @@ void game_score(struct game *game, int score)
         text_sprites_destroy(game->info_score);
         game->info_score = NULL;
     }
+}
+
+
+// Return guard at x:y coordinate if there is any.
+struct guard *game_guard_get(struct game *g, int x, int y)
+{
+    for (int i = 0; i < g->nguards; i++) {
+        if (g->guards[i]->x == x && g->guards[i]->y == y) {
+            return g->guards[i];
+        }
+    }
+
+    return NULL;
 }
