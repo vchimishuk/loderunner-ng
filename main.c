@@ -144,8 +144,10 @@ int main(void)
 
         double delay = 0;
         int key = 0;
+
         for (;;) {
-            unsigned long starttime = SDL_GetTicks64();
+            unsigned long stime = SDL_GetTicks64();
+            delay += FRAME_TIME;
 
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
@@ -159,6 +161,9 @@ int main(void)
                     case SDLK_p:
                         render_texture(renderer, "paused.png");
                         key_wait_pause();
+                        // Pause breaks timing calculations, start over.
+                        stime = SDL_GetTicks64();
+                        delay = FRAME_TIME;
                         break;
                     default:
                         key = event.key.keysym.sym;
@@ -200,12 +205,9 @@ int main(void)
                 SDL_RenderPresent(renderer);
             }
 
-            double left = FRAME_TIME - (SDL_GetTicks64() - starttime);
-            if (left > 0) {
-                delay += left;
-                long d = (long) delay;
-                delay -= d;
-                SDL_Delay(d);
+            if (delay > 0) {
+                SDL_Delay(delay);
+                delay -= (SDL_GetTicks64() - stime);
             }
         }
 

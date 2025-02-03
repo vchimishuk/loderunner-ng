@@ -161,7 +161,6 @@ struct animation *animation_init(enum animation_t t)
         a->sprites[0] = hole_sprite_init(26, false, 166);
         a->sprites[1] = hole_sprite_init(17, false, 8);
         a->sprites[2] = hole_sprite_init(8, false, 8);
-        // TODO: Why do we need 4-th sprite???
         a->sprites[3] = hole_sprite_init(35, false, 4);
         a->sprites[4] = NULL;
         break;

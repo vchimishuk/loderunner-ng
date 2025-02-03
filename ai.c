@@ -745,8 +745,6 @@ void ai_tick(struct game *game)
 
         if (g->state == GSTATE_TRAP_LEFT
             || g->state == GSTATE_TRAP_RIGHT) {
-            // TODO: Make sure the runner can dig 3 holes, traps 3 guards
-            //       and run over them.
             if (animation_tick(g->cura)) {
                 g->state = GSTATE_CLIMB_OUT;
                 g->cura = guard_state_animation(g, GSTATE_CLIMB_OUT);
