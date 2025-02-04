@@ -18,6 +18,15 @@
 static const int RUNNER_DX = 8;
 static const int RUNNER_DY = 9;
 
+static int min(int a, int b)
+{
+    if (a < b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
 static bool skip_keyhole(int key)
 {
     return key == SDLK_RETURN || key == SDLK_ESCAPE;
@@ -132,7 +141,7 @@ static struct sprite **text_sprites_init(char *s)
     return sprites;
 }
 
-void text_sprites_destroy(struct sprite **s)
+static void text_sprites_destroy(struct sprite **s)
 {
     struct sprite **p = s;
     while (*p != NULL) {
@@ -146,6 +155,15 @@ static bool empty_tile(struct game *game, int x, int y)
 {
     return is_tile(game, x, y, MAP_TILE_EMPTY)
         || is_tile(game, x, y, MAP_TILE_FALSE);
+}
+
+static void lives_inc(struct game *game)
+{
+    game->lives = min(game->lives + 1, 100);
+    if (game->info_lives != NULL) {
+        text_sprites_destroy(game->info_lives);
+        game->info_lives = NULL;
+    }
 }
 
 static void runner_tick(struct game *game, int key)
@@ -460,7 +478,6 @@ static void runner_render(SDL_Renderer *renderer, struct runner *runner)
 
 static void guard_render(SDL_Renderer *renderer, struct guard *g)
 {
-    // TODO: Check if it is alive and such.
     render(renderer, *(g->cura->cur),
             g->x * TILE_MAP_WIDTH + g->tx,
             g->y * TILE_MAP_HEIGHT + g->ty);
@@ -469,7 +486,7 @@ static void guard_render(SDL_Renderer *renderer, struct guard *g)
 static void game_reset(struct game *game)
 {
     runner_reset(game->runner);
-    // TODO: Decrement men.
+    game->lives -= 1;
     // TODO: Reset map: guards, gold, etc. Reset all tiles.
     // TODO: Reset statistics?
 
@@ -486,7 +503,7 @@ struct game *game_init(struct level *lvl)
     game->state = GSTATE_START;
     game->keyhole = 0;
     game->lvl = lvl;
-    game->lives = 1;
+    game->lives = 5;
     game->info_score = NULL;
     game->info_lives = NULL;
     game->info_level = NULL;
@@ -683,6 +700,9 @@ bool game_tick(struct game *game, int key)
         if (game->level_score_iter > 0) {
             game_score(game, SCORE_FINISH_STEP);
             game->level_score_iter--;
+            if (game->level_score_iter == 0) {
+                lives_inc(game);
+            }
         } else if (game->keyhole > 0) {
             if (skip_keyhole(key)) {
                 game->keyhole = 0;
@@ -751,7 +771,6 @@ void game_score(struct game *game, int score)
         game->info_score = NULL;
     }
 }
-
 
 // Return guard at x:y coordinate if there is any.
 struct guard *game_guard_get(struct game *g, int x, int y)
