@@ -20,6 +20,10 @@ enum guard_state {
 };
 
 struct guard {
+    // Start X position.
+    int sx;
+    // Start Y position.
+    int sy;
     // Current X (0..MAP_WIDTH) position on the map.
     int x;
     // Current Y (0..MAP_HEIGHT) position on the map.
@@ -71,7 +75,7 @@ struct guard {
     int goldholds;
 };
 
-struct guard *guard_init(void);
+struct guard *guard_init(int x, int y);
 void guard_destroy(struct guard *g);
 void guard_reset(struct guard *g);
 struct animation *guard_state_animation(struct guard *g, enum guard_state s);

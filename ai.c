@@ -112,7 +112,8 @@ static void ai_drop_gold(struct game *game, struct guard *guard)
     }
 }
 
-// Drop gold when trapped. Discard gold if it is not possible to drp the gold.
+// Drop gold when trapped. Lost gold if it is not possible to drop gold.
+// In this case as a result runner have to pickup one gold less.
 static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
 {
     if (guard->gold == NULL) {
@@ -124,7 +125,7 @@ static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
     if (is_tile(game, x, y - 1, MAP_TILE_EMPTY)) {
         gold_drop(guard->gold, x, y - 1);
     } else {
-        game_discard_gold(game, guard->gold);
+        gold_lose(guard->gold);
     }
 
     guard->gold = NULL;
@@ -653,7 +654,6 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         // When stopped keep current animation.
         if (state != GSTATE_STOP) {
             guard->cura = guard_state_animation(guard, state);
-            animation_reset(guard->cura);
         }
         guard->state = state;
     }
@@ -686,15 +686,6 @@ void ai_reborn(struct game *game, struct guard *guard)
     guard->holey = -1;
     guard->state = GSTATE_REBORN;
     guard->cura = guard_state_animation(guard, GSTATE_REBORN);
-
-    // If guard dies still holding gold means that he could not drop it earlier.
-    // Gold must be discarded in this case as a result runner have to pickup
-    // one gold less.
-    if (guard->gold != NULL) {
-        game_discard_gold(game, guard->gold);
-        guard->gold = NULL;
-        guard->goldholds = 0;
-    }
 }
 
 // Callback to move guards.

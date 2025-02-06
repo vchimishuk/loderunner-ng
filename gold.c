@@ -24,6 +24,7 @@ void gold_reset(struct gold *g)
     g->x = g->sx;
     g->y = g->sy;
     g->visible = true;
+    g->lost = false;
 }
 
 struct gold *gold_get(struct game *g, int x, int y)
@@ -31,7 +32,7 @@ struct gold *gold_get(struct game *g, int x, int y)
     for (int i = 0; i < g->ngold; i++) {
         struct gold *gl = g->gold[i];
 
-        if (gl->visible && gl->x == x && gl->y == y) {
+        if (!gl->lost && gl->visible && gl->x == x && gl->y == y) {
             return gl;
         }
     }
@@ -40,7 +41,7 @@ struct gold *gold_get(struct game *g, int x, int y)
 }
 
 /*
- * Returns gold at runner's position if can.
+ * Returns gold at runner or guard position if can.
  */
 struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
 {
@@ -60,4 +61,9 @@ void gold_drop(struct gold *g, int x, int y)
     g->x = x;
     g->y = y;
     g->visible = true;
+}
+
+void gold_lose(struct gold *g)
+{
+    g->lost = true;
 }

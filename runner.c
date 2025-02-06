@@ -50,6 +50,7 @@ void runner_reset(struct runner *r)
     r->ty = 0;
     r->cura = r->righta;
     r->state = RSTATE_RIGHT;
+    r->ngold = 0;
 }
 
 struct animation *runner_state_animation(struct runner *r, enum runner_state s)

@@ -487,13 +487,24 @@ static void game_reset(struct game *game)
 {
     runner_reset(game->runner);
     game->lives -= 1;
-    // TODO: Reset map: guards, gold, etc. Reset all tiles.
-    // TODO: Reset statistics?
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
         for (int j = 0; j < MAP_WIDTH; j++) {
-            map_tile_reset(game->map[i][j]);
+            struct map_tile *t = game->map[i][j];
+            map_tile_reset(t);
+            // Special case for MAP_TILE_HLADDER.
+            if (game->level->map[i][j] == MAP_TILE_HLADDER) {
+                t->curt = MAP_TILE_EMPTY;
+                t->cura = NULL;
+            }
         }
+    }
+
+    for (int i = 0; i < game->nguards; i++) {
+        guard_reset(game->guards[i]);
+    }
+    for (int i = 0; i < game->ngold; i++) {
+        gold_reset(game->gold[i]);
     }
 }
 
@@ -502,7 +513,7 @@ struct game *game_init(struct level *lvl)
     struct game *game = xmalloc(sizeof(struct game));
     game->state = GSTATE_START;
     game->keyhole = 0;
-    game->lvl = lvl;
+    game->level = lvl;
     game->lives = 5;
     game->info_score = NULL;
     game->info_lives = NULL;
@@ -541,10 +552,7 @@ struct game *game_init(struct level *lvl)
                 game->map[i][j] = map_tile_init(MAP_TILE_EMPTY,
                     ANIMATION_NONE, i, j);
 
-                struct guard *g = guard_init();
-                g->x = j;
-                g->y = i;
-
+                struct guard *g = guard_init(j, i);
                 game->nguards++;
                 if (game->nguards > MAX_GUARDS) {
                     die("guard limit exceeded");
@@ -620,7 +628,6 @@ void game_destroy(struct game *game)
         guard_destroy(game->guards[i]);
     }
     free(game->guards);
-
     free(game);
 }
 
@@ -637,7 +644,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 
     for (int i = 0; i < game->ngold; i++) {
         struct gold *g = game->gold[i];
-        if (g->visible) {
+        if (!g->lost && g->visible) {
             render(renderer, *(g->animation->cur),
                 g->x * TILE_MAP_WIDTH, g->y * TILE_MAP_HEIGHT);
         }
@@ -675,7 +682,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     }
     if (game->info_level == NULL) {
         char buf[16];
-        snprintf(buf, 16, " LEVEL%03d", game->lvl->num);
+        snprintf(buf, 16, " LEVEL%03d", game->level->num);
         game->info_level = text_sprites_init(buf);
     }
     for (int i = 0; game->info_level[i] != NULL; i++, col++) {
@@ -747,18 +754,6 @@ bool game_tick(struct game *game, int key)
     // TODO: Make game_render() static and call it here instead of main.c?
 
     return false;
-}
-
-void game_discard_gold(struct game *game, struct gold *gold)
-{
-    for (int i = 0; i < game->ngold; i++) {
-        if (game->gold[i] == gold) {
-            gold_destroy(game->gold[i]);
-            game->gold[i] = game->gold[game->ngold - 1];
-            game->ngold--;
-            break;
-        }
-    }
 }
 
 void game_score(struct game *game, int score)

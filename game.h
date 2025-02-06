@@ -61,7 +61,7 @@ enum game_state {
 struct game {
     enum game_state state;
     float keyhole;
-    struct level *lvl;
+    struct level *level;
     int lives;
     struct map_tile *map[MAP_HEIGHT][MAP_WIDTH];
     struct ground_tile *ground[MAP_WIDTH];
@@ -84,7 +84,6 @@ struct game *game_init(struct level *lvl);
 bool game_tick(struct game *game, int key);
 void game_render(struct game *game, SDL_Renderer *renderer);
 void game_destroy(struct game *game);
-void game_discard_gold(struct game *game, struct gold *gold);
 void game_score(struct game *game, int score);
 struct guard *game_guard_get(struct game *g, int x, int y);
 

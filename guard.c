@@ -6,37 +6,56 @@
 
 struct animation *guard_state_animation(struct guard *g, enum guard_state s)
 {
+    struct animation *a;
+
     switch (s) {
     case GSTATE_CLIMB_LEFT:
-        return g->climblefta;
+        a = g->climblefta;
+        break;
     case GSTATE_CLIMB_OUT:
-        return g->updowna;
+        a = g->updowna;
+        break;
     case GSTATE_CLIMB_RIGHT:
-        return g->climbrighta;
+        a = g->climbrighta;
+        break;
     case GSTATE_FALL_LEFT:
-        return g->falllefta;
+        a = g->falllefta;
+        break;
     case GSTATE_FALL_RIGHT:
-        return g->fallrighta;
+        a = g->fallrighta;
+        break;
     case GSTATE_LEFT:
-        return g->lefta;
+        a = g->lefta;
+        break;
     case GSTATE_REBORN:
-        return g->reborna;
+        a = g->reborna;
+        break;
     case GSTATE_RIGHT:
-        return g->righta;
+        a = g->righta;
+        break;
     case GSTATE_TRAP_LEFT:
-        return g->traplefta;
+        a = g->traplefta;
+        break;
     case GSTATE_TRAP_RIGHT:
-        return g->traprighta;
+        a = g->traprighta;
+        break;
     case GSTATE_UPDOWN:
-        return g->updowna;
+        a = g->updowna;
+        break;
     default:
         die("illegal state");
     }
+
+    animation_reset(a);
+
+    return a;
 }
 
-struct guard *guard_init(void)
+struct guard *guard_init(int x, int y)
 {
     struct guard *g = xmalloc(sizeof(struct guard));
+    g->sx = x;
+    g->sy = y;
     g->x = 0;
     g->y = 0;
     g->tx = 0;
@@ -72,15 +91,13 @@ void guard_destroy(struct guard *g)
     free(g);
 }
 
-// TODO: Looks like it is used only by guard_init(). Remove it then.
 void guard_reset(struct guard *g)
 {
-    // TODO: Start position?
-    g->x = 0;
-    g->y = 0;
+    g->x = g->sx;
+    g->y = g->sy;
     g->tx = 0;
     g->ty = 0;
-    g->cura = g->lefta;
+    g->cura = guard_state_animation(g, GSTATE_LEFT);
     g->state = GSTATE_LEFT;
     g->holey = -1;
     g->gold = NULL;

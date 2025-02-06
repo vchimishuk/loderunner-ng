@@ -12,6 +12,12 @@ struct gold {
     // When runner or guard picks the gold up we simply hide it
     // and display it back when it is dropped.
     bool visible;
+    // When guard holding gold dies he drops gold on the ground. However,
+    // it can be a situation when there is not place to drop gold to
+    // (for example guard is walled deep into a wall). In this case gold
+    // he holds become completely lost and cannot be picked up bu the
+    // runner any more.
+    bool lost;
     struct animation *animation;
 };
 
@@ -21,5 +27,6 @@ void gold_reset(struct gold *gold);
 struct gold *gold_get(struct game *g, int x, int y);
 struct gold *gold_pickup(struct game *g, int x, int y, int tx, int ty);
 void gold_drop(struct gold *g, int x, int y);
+void gold_lose(struct gold *g);
 
 #endif /* GOLD_H_ */
