@@ -350,8 +350,10 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
             break;
         }
 
-        if (is_tilenh(game, x + dx, y, MAP_TILE_BRICK)
-            || is_tilenh(game, x + dx, y, MAP_TILE_SOLID)) {
+        // Horisontal scanning should not ignore holes, so guard can walks
+        // out from a cave.
+        if (is_tile(game, x + dx, y, MAP_TILE_BRICK)
+            || is_tile(game, x + dx, y, MAP_TILE_SOLID)) {
             // We have reached a wall.
             break;
         }
