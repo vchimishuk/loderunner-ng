@@ -65,5 +65,7 @@ struct animation *animation_init(enum animation_t t);
 void animation_destroy(struct animation *a);
 bool animation_tick(struct animation *a);
 void animation_reset(struct animation *a);
+void animation_render(SDL_Renderer *renderer, struct animation *a, int x, int y);
+void animation_render_sprite(SDL_Renderer *renderer, struct sprite *s, int x, int y);
 
 #endif /* ANIMATION_H_ */

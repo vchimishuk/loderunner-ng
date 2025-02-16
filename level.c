@@ -12,20 +12,6 @@
 
 static const char *TILE_CHARS = "# $0SH-&@X";
 
-/* /\* */
-/*  * Convert character representation as in level-file to struct tile (int). */
-/*  * Returns -1 if character is not valid. */
-/*  *\/ */
-/* static int parse_tile(char c) */
-/* { */
-/*     char *p = strchr(TILE_CHARS, c); */
-/*     if (p == NULL) { */
-/*         return -1; */
-/*     } */
-
-/*     return p - TILE_CHARS; */
-/* } */
-
 /*
  * Load level from file.
  * It is caller's responsibility to free returned object.

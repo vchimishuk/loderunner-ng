@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <SDL2/SDL_image.h>
+#include <SDL2/SDL.h>
 #include "texture.h"
 #include "animation.h"
 #include "exit.h"
@@ -316,4 +316,29 @@ void animation_reset(struct animation *a)
 {
     a->cur = a->sprites;
     a->frame = (*(a->cur))->frames;
+}
+
+/*
+ * Render current sprite of the animation.
+ */
+void animation_render(SDL_Renderer *renderer, struct animation *a, int x, int y)
+{
+    animation_render_sprite(renderer, *(a->cur), x, y);
+}
+
+void animation_render_sprite(SDL_Renderer *renderer, struct sprite *s, int x, int y)
+{
+    SDL_Rect src;
+    src.x = s->x;
+    src.y = s->y;
+    src.w = s->w;
+    src.h = s->h;
+    SDL_Rect dst;
+    dst.x = x;
+    dst.y = y;
+    dst.w = s->w;
+    dst.h = s->h;
+    if (SDL_RenderCopy(renderer, s->texture, &src, &dst) < 0) {
+        die_sdl("SDL_RenderCopy");
+    }
 }

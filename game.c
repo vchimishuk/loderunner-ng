@@ -462,17 +462,17 @@ static void detect_collision(struct game *game)
 
 static void runner_render(SDL_Renderer *renderer, struct runner *runner)
 {
-    render(renderer, *(runner->cura->cur),
+    animation_render(renderer, runner->cura,
             runner->x * TILE_MAP_WIDTH + runner->tx,
             runner->y * TILE_MAP_HEIGHT + runner->ty);
 
     if (runner->state == RSTATE_DIG_LEFT) {
-        render(renderer, *(runner->holelefta->cur),
+        animation_render(renderer, runner->holelefta,
             (runner->x - 1) * TILE_MAP_WIDTH,
             (runner->y) * TILE_MAP_HEIGHT);
     }
     if (runner->state == RSTATE_DIG_RIGHT) {
-        render(renderer, *(runner->holerighta->cur),
+        animation_render(renderer, runner->holerighta,
             (runner->x + 1) * TILE_MAP_WIDTH,
             (runner->y) * TILE_MAP_HEIGHT);
     }
@@ -480,7 +480,7 @@ static void runner_render(SDL_Renderer *renderer, struct runner *runner)
 
 static void guard_render(SDL_Renderer *renderer, struct guard *g)
 {
-    render(renderer, *(g->cura->cur),
+    animation_render(renderer, g->cura,
             g->x * TILE_MAP_WIDTH + g->tx,
             g->y * TILE_MAP_HEIGHT + g->ty);
 }
@@ -639,7 +639,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         for (int j = 0; j < MAP_WIDTH; j++) {
             struct map_tile *t = game->map[i][j];
             if (t != NULL && t->cura != NULL) {
-                render(renderer, *(t->cura->cur), t->x, t->y);
+                animation_render(renderer, t->cura, t->x, t->y);
             }
         }
     }
@@ -647,7 +647,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
     for (int i = 0; i < game->ngold; i++) {
         struct gold *g = game->gold[i];
         if (!g->lost && g->visible) {
-            render(renderer, *(g->animation->cur),
+            animation_render(renderer, g->animation,
                 g->x * TILE_MAP_WIDTH, g->y * TILE_MAP_HEIGHT);
         }
     }
@@ -660,7 +660,7 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 
     for (int i = 0; i < MAP_WIDTH; i++) {
         struct ground_tile *t = game->ground[i];
-        render(renderer, *(t->a->cur), t->x, t->y);
+        animation_render(renderer, t->a, t->x, t->y);
     }
 
     int col = 0;
@@ -672,7 +672,8 @@ void game_render(struct game *game, SDL_Renderer *renderer)
 
     }
     for (int i = 0; game->info_score[i] != NULL; i++, col++) {
-        render(renderer, game->info_score[i], col * TILE_TEXT_WIDTH, infoy);
+        animation_render_sprite(renderer, game->info_score[i],
+            col * TILE_TEXT_WIDTH, infoy);
     }
     if (game->info_lives == NULL) {
         char buf[16];
@@ -680,7 +681,8 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         game->info_lives = text_sprites_init(buf);
     }
     for (int i = 0; game->info_lives[i] != NULL; i++, col++) {
-        render(renderer, game->info_lives[i], col * TILE_TEXT_WIDTH, infoy);
+        animation_render_sprite(renderer, game->info_lives[i],
+            col * TILE_TEXT_WIDTH, infoy);
     }
     if (game->info_level == NULL) {
         char buf[16];
@@ -688,7 +690,8 @@ void game_render(struct game *game, SDL_Renderer *renderer)
         game->info_level = text_sprites_init(buf);
     }
     for (int i = 0; game->info_level[i] != NULL; i++, col++) {
-        render(renderer, game->info_level[i], col * TILE_TEXT_WIDTH, infoy);
+        animation_render_sprite(renderer, game->info_level[i],
+            col * TILE_TEXT_WIDTH, infoy);
     }
 
     if (game->state == GSTATE_START || game->state == GSTATE_END) {

@@ -22,10 +22,8 @@
 #define FRAME_TIME (1000.0 / FPS)
 
 // Render texture at the center of the screen.
-static void render_texture(SDL_Renderer *renderer, char *texture)
+static void render_texture(SDL_Renderer *renderer, SDL_Texture *t)
 {
-    SDL_Texture *t = texture_load(renderer, texture);
-
     SDL_Rect src;
     src.x = 0;
     src.y = 0;
@@ -42,6 +40,14 @@ static void render_texture(SDL_Renderer *renderer, char *texture)
     if (SDL_RenderCopy(renderer, t, &src, &dst) < 0) {
         die("failed to render a texture: %s", SDL_GetError());
     }
+}
+
+// Load texture from the file and render it at the center of the screen.
+static void render_texture_file(SDL_Renderer *renderer, char *file)
+{
+    SDL_Texture *t = texture_load(renderer, file);
+
+    render_texture(renderer, t);
     SDL_RenderPresent(renderer);
     SDL_DestroyTexture(t);
 }
@@ -58,11 +64,6 @@ static int key_wait(void)
 
         SDL_Delay(FRAME_TIME);
     }
-}
-
-static void key_wait_pause(void)
-{
-    while (key_wait() != SDLK_p);
 }
 
 static bool key_quit(int key)
@@ -105,7 +106,7 @@ int main(void)
         die("failed to initialize SDL renderer: %s", SDL_GetError());
     }
 
-    if (SDL_RenderSetScale(renderer, 0.8, 0.8) != 0) {
+    if (SDL_RenderSetScale(renderer, 1, 1) != 0) {
         die("failed to scale renderer: %s", SDL_GetError());
     }
     if (SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 255) != 0) {
@@ -134,13 +135,14 @@ int main(void)
 
     for (;;) {
         SDL_RenderClear(renderer);
-        render_texture(renderer, "start.png");
+        render_texture_file(renderer, "start.png");
         if (key_quit(key_wait())) {
             break;
         }
 
         struct level *lvl = level_init(1);
         struct game *game = game_init(lvl);
+        bool pause = false;
         bool quit = false;
         bool start = false;
         bool won = false;
@@ -162,12 +164,7 @@ int main(void)
                         start = true;
                         goto eog;
                     case SDLK_p:
-                        render_texture(renderer, "paused.png");
-                        sound_pause();
-                        key_wait_pause();
-                        // Pause breaks timing calculations, start over.
-                        stime = SDL_GetTicks64();
-                        delay = FRAME_TIME;
+                        pause = !pause;
                         sound_pause();
                         break;
                     default:
@@ -186,7 +183,7 @@ int main(void)
                 }
             }
 
-            if (game_tick(game, key)) {
+            if (!pause && game_tick(game, key)) {
                 if (game->won) {
                     int l = lvl->num + 1;
                     int score = game->score;
@@ -207,6 +204,9 @@ int main(void)
             } else {
                 SDL_RenderClear(renderer);
                 game_render(game, renderer);
+                if (pause) {
+                    render_texture(renderer, texture_get(TEXTURE_PAUSED));
+                }
                 // blit(renderer, brick, 100, 100);
                 /* render_tile_text(renderer, t); */
                 SDL_RenderPresent(renderer);
@@ -232,7 +232,7 @@ int main(void)
             break;
         }
         if (!won) {
-            render_texture(renderer, "gameover.png");
+            render_texture_file(renderer, "gameover.png");
         }
         if (key_quit(key_wait())) {
             break;
