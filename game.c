@@ -205,7 +205,7 @@ static void runner_tick(struct game *game, int key)
             }
         }
     } else if ((state == RSTATE_FALL_LEFT || state == RSTATE_FALL_RIGHT)
-        || (empty_tile(game, x, y + 1)
+        || ((empty_tile(game, x, y + 1) || is_tile(game, x, y + 1, MAP_TILE_ROPE))
             && !is_tile(game, x, y, MAP_TILE_ROPE)
             && !is_tile(game, x, y, MAP_TILE_LADDER)
             && game_guard_get(game, x, y + 1) == NULL)) {
