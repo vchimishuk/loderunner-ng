@@ -216,7 +216,9 @@ static void runner_tick(struct game *game, int key)
         if (state == RSTATE_LEFT || state == RSTATE_CLIMB_LEFT) {
             state = RSTATE_FALL_LEFT;
             sound_play(SOUND_FALL);
-        } else if (state == RSTATE_RIGHT || state == RSTATE_CLIMB_RIGHT) {
+        } else if (state == RSTATE_RIGHT || state == RSTATE_CLIMB_RIGHT
+            || state == RSTATE_UPDOWN) {
+
             state = RSTATE_FALL_RIGHT;
             sound_play(SOUND_FALL);
         }
