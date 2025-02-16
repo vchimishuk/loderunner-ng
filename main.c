@@ -105,9 +105,12 @@ int main(void)
         die("failed to initialize SDL renderer: %s", SDL_GetError());
     }
 
-    // TODO: Handle errors.
-    SDL_RenderSetScale(renderer, 0.8, 0.8);
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 255);
+    if (SDL_RenderSetScale(renderer, 0.8, 0.8) != 0) {
+        die("failed to scale renderer: %s", SDL_GetError());
+    }
+    if (SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 255) != 0) {
+        die("failed to set renderer color: %s", SDL_GetError());
+    }
 
     /* SDL_Texture *block = texture_load(renderer, "block.png"); */
     // SDL_Texture *brick = texture_load(renderer, "brick.png");
@@ -185,10 +188,12 @@ int main(void)
 
             if (game_tick(game, key)) {
                 if (game->won) {
-                    // TODO: Handle last level situation.
-                    //       goto eog;
                     int l = lvl->num + 1;
                     int score = game->score;
+
+                    if (l == NLEVELS) {
+                        goto eog;
+                    }
 
                     game_destroy(game);
                     level_destroy(lvl);

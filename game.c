@@ -751,8 +751,6 @@ bool game_tick(struct game *game, int key)
         break;
     }
 
-    // TODO: Make game_render() static and call it here instead of main.c?
-
     return false;
 }
 

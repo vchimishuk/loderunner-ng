@@ -1,6 +1,8 @@
 #ifndef LEVEL_H_
 #define LEVEL_H_
 
+#define NLEVELS 150
+
 #define MAP_WIDTH 28
 #define MAP_HEIGHT 16
 
