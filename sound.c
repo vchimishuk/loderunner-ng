@@ -73,3 +73,8 @@ void sound_stop(void)
 {
     Mix_HaltMusic();
 }
+
+void sound_volume(int v)
+{
+    Mix_VolumeMusic(v / 100.0 * MIX_MAX_VOLUME);
+}

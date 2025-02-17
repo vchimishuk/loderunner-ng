@@ -19,5 +19,6 @@ void sound_destroy(void);
 void sound_pause(void);
 void sound_play(enum sound e);
 void sound_stop(void);
+void sound_volume(int v);
 
 #endif /* SOUND_H_ */

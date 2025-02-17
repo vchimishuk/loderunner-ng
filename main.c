@@ -1,7 +1,9 @@
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "SDL2/SDL_mixer.h"
@@ -9,7 +11,6 @@
 #include "game.h"
 #include "level.h"
 #include "path.h"
-#include "render.h"
 #include "sound.h"
 #include "texture.h"
 #include "xmalloc.h"
@@ -20,6 +21,24 @@
 
 #define FPS 23
 #define FRAME_TIME (1000.0 / FPS)
+
+#define PROG_NAME "loderunner-ng"
+
+static void usage(void)
+{
+    fprintf(stderr, "usage: %s [-l level] [-m] [-V volume]\n", PROG_NAME);
+}
+
+static void error(char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    fprintf(stderr, "%s: ", PROG_NAME);
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    va_end(ap);
+}
 
 // Render texture at the center of the screen.
 static void render_texture(SDL_Renderer *renderer, SDL_Texture *t)
@@ -71,8 +90,39 @@ static bool key_quit(int key)
     return key == SDLK_q || key == SDLK_ESCAPE;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+    int ch;
+    int start_level = 1;
+    int volume = 100;
+
+    while ((ch = getopt(argc, argv, "l:mV:")) != -1) {
+        switch (ch) {
+        case 'l':
+            errno = 0;
+            start_level = (int) strtol(optarg, NULL, 10);
+            if (errno != 0 || start_level < 1 || start_level > NLEVELS) {
+                error("invalid level: %s", optarg);
+                return EXIT_FAILURE;
+            }
+            break;
+        case 'm':
+            volume = 0;
+            break;
+        case 'V':
+            errno = 0;
+            volume = (int) strtol(optarg, NULL, 10);
+            if (errno != 0 || volume < 0 || volume > 100) {
+                error("invalid volume: %s", optarg);
+                return EXIT_FAILURE;
+            }
+            break;
+        default:
+            usage();
+            return EXIT_FAILURE;
+        }
+    }
+
     srandom(time(NULL));
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
@@ -120,6 +170,7 @@ int main(void)
 
     texture_init(renderer);
     sound_init();
+    sound_volume(volume);
 
 
     /* struct tile_text *t = xmalloc(sizeof(struct tile_text)); */
@@ -140,7 +191,7 @@ int main(void)
             break;
         }
 
-        struct level *lvl = level_init(1);
+        struct level *lvl = level_init(start_level);
         struct game *game = game_init(lvl);
         bool pause = false;
         bool quit = false;
