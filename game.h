@@ -7,7 +7,7 @@
 #include "level.h"
 #include "runner.h"
 
-#define MAX_GOLD 16
+#define MAX_GOLD 24
 #define MAX_GUARDS 12
 
 /*

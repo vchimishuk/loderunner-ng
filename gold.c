@@ -1,5 +1,6 @@
 #include "game.h"
 #include "gold.h"
+#include "phys.h"
 #include "xmalloc.h"
 
 struct gold *gold_init(int x, int y)
@@ -47,8 +48,8 @@ struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
 {
     struct gold *g = gold_get(game, x, y);
     if (g != NULL
-        && abs(0 - tx) <= TILE_MAP_WIDTH / 4
-        && abs(0 - ty) <= TILE_MAP_HEIGHT / 4) {
+        && ((tx == 0 && ty >= 0 && ty < MOVE_DY)
+            || (ty == 0 && tx >= 0 && tx < MOVE_DX))) {
         g->visible = false;
         return g;
     }
