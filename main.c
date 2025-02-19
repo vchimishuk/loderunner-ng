@@ -26,7 +26,7 @@
 
 static void usage(void)
 {
-    fprintf(stderr, "usage: %s [-l level] [-m] [-V volume]\n", PROG_NAME);
+    fprintf(stderr, "usage: %s [-fm] [-l level] [-V volume]\n", PROG_NAME);
 }
 
 static void error(char *fmt, ...)
@@ -95,9 +95,13 @@ int main(int argc, char **argv)
     int ch;
     int start_level = 1;
     int volume = 100;
+    Uint32 wflags = 0;
 
-    while ((ch = getopt(argc, argv, "l:mV:")) != -1) {
+    while ((ch = getopt(argc, argv, "fl:mV:")) != -1) {
         switch (ch) {
+        case 'f':
+            wflags |= SDL_WINDOW_FULLSCREEN;
+            break;
         case 'l':
             errno = 0;
             start_level = (int) strtol(optarg, NULL, 10);
@@ -144,7 +148,7 @@ int main(int argc, char **argv)
 
     SDL_Window *window = SDL_CreateWindow("Lode Runner",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+        SCREEN_WIDTH, SCREEN_HEIGHT, wflags);
     if (window == NULL) {
         die("failed to create SDL window: %s", SDL_GetError());
     }
