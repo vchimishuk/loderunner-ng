@@ -311,12 +311,17 @@ static void runner_tick(struct game *game, int key)
                 y += 1;
                 ty -= TILE_MAP_HEIGHT;
             }
-            if (ty > 0 && !can_move(game, x, y + 1)) {
+
+            if (state == RSTATE_UPDOWN && ty < 0 && empty_tile(game, x, y)) {
+                // Runner starts falling down from the ladder.
+                state = RSTATE_FALL_RIGHT;
+                move = true;
+            } else if (ty > 0 && !can_move(game, x, y + 1)) {
+                // Cannot move down any more -- ladder standing on the ground.
                 move = false;
             } else {
-                if (is_tile(game, x, y, MAP_TILE_ROPE)
-                    && !is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
-
+                if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+                    // Hanging on the rope, drop it, start falling down.
                     if (state == RSTATE_CLIMB_RIGHT) {
                         state = RSTATE_FALL_RIGHT;
                     } else {
@@ -324,6 +329,7 @@ static void runner_tick(struct game *game, int key)
                     }
                     sound_play(SOUND_FALL);
                 } else {
+                    // Keep moving down over the ladder.
                     state = RSTATE_UPDOWN;
                 }
                 move = true;
