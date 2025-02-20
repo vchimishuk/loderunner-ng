@@ -1,0 +1,16 @@
+NAME
+    loderunner-ng is a classic Lode Runner game remake heavily based on
+    LodeRunner_TotalRecall (https://github.com/SimonHung/LodeRunner_TotalRecall)
+    implementation by Simon Hung.
+
+AUTHORS
+    Viacheslav Chimishuk <vchimishuk@yandex.ru>
+
+COPYING
+    The program's source code (excluding textures and sounds), is released
+    under the GNU General Public License version 3 or later, which is
+    distributed in the COPYING file. Textures and sound belongs to
+    LodeRunner_TotalRecall project by Simon Hung
+    (https://github.com/SimonHung/LodeRunner_TotalRecall).
+    You should have received a copy of the GNU General Public License along with
+    this program.  If not, see <http://www.gnu.org/licenses/>.
