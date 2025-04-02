@@ -246,15 +246,16 @@ static enum dir ai_scan_level(struct game *game, struct guard *guard)
 static int ai_scan_down(struct game *game, int x, int y, int startx)
 {
     // Return "no route" if cannot move down.
-    if (y < MAP_HEIGHT - 1
-        && (is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
-            || is_tilenh(game, x, y + 1, MAP_TILE_SOLID))) {
+    if (y == MAP_HEIGHT - 1
+        || is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
+        || is_tilenh(game, x, y + 1, MAP_TILE_SOLID)) {
         return RATING_MAX;
     }
 
     // Until we haven't reached the ground.
-    while (y < MAP_HEIGHT && !is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
+    while (y < MAP_HEIGHT - 1 && !is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
         && !is_tilenh(game, x, y + 1, MAP_TILE_SOLID)) {
+
         // Try to trace left and right if we can (not in a freefall mode).
         if (!is_tilenh(game, x, y, MAP_TILE_EMPTY)) {
             // Check if we can turn left.
