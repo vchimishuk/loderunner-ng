@@ -195,7 +195,7 @@ static enum dir ai_scan_level(struct game *game, struct guard *guard)
     while (gx != rx) {
         enum map_tile_t lvl = game->map[gy][gx]->baset;
         enum map_tile_t nextlvl;
-        if (gy < MAP_HEIGHT) {
+        if (gy < MAP_HEIGHT - 1) {
             nextlvl = game->map[gy + 1][gx]->baset;
         } else {
             nextlvl = MAP_TILE_SOLID;
