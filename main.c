@@ -88,23 +88,26 @@ static void render_texture_file(SDL_Renderer *renderer, char *file)
     SDL_DestroyTexture(t);
 }
 
-static int key_wait(void)
+// Wait for a key to start new game or quit the application.
+// Returns true if quit key received.
+static bool key_wait(void)
 {
     for (;;) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_KEYDOWN) {
-                return event.key.keysym.sym;
+                switch (event.key.keysym.sym) {
+                case SDLK_RETURN:
+                case SDLK_SPACE:
+                    return false;
+                case SDLK_q:
+                    return true;
+                }
             }
         }
 
         SDL_Delay(FRAME_TIME);
     }
-}
-
-static bool key_quit(int key)
-{
-    return key == SDLK_q || key == SDLK_ESCAPE;
 }
 
 int main(int argc, char **argv)
@@ -208,7 +211,7 @@ int main(int argc, char **argv)
     for (;;) {
         SDL_RenderClear(renderer);
         render_texture_file(renderer, "start.png");
-        if (key_quit(key_wait())) {
+        if (key_wait()) {
             break;
         }
 
@@ -232,9 +235,9 @@ int main(int argc, char **argv)
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
                     case SDLK_q:
-                    case SDLK_ESCAPE:
                         start = true;
                         goto eog;
+                    case SDLK_ESCAPE:
                     case SDLK_p:
                         pause = !pause;
                         sound_pause();
@@ -306,7 +309,7 @@ int main(int argc, char **argv)
         if (!won) {
             render_texture_file(renderer, "gameover.png");
         }
-        if (key_quit(key_wait())) {
+        if (key_wait()) {
             break;
         }
     }
