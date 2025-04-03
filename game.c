@@ -338,13 +338,18 @@ static void runner_tick(struct game *game, int key)
                 move = false;
             } else {
                 if (is_tile(game, x, y, MAP_TILE_ROPE)) {
-                    // Hanging on the rope, drop it, start falling down.
-                    if (state == RSTATE_CLIMB_RIGHT) {
-                        state = RSTATE_FALL_RIGHT;
+                    // Hanging on the rope, drop it, start falling down
+                    // or climb over ladder if any.
+                    if (is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
+                        state = RSTATE_UPDOWN;
                     } else {
-                        state = RSTATE_FALL_LEFT;
+                        if (state == RSTATE_CLIMB_RIGHT) {
+                            state = RSTATE_FALL_RIGHT;
+                        } else {
+                            state = RSTATE_FALL_LEFT;
+                        }
+                        sound_play(SOUND_FALL);
                     }
-                    sound_play(SOUND_FALL);
                 } else {
                     // Keep moving down over the ladder.
                     state = RSTATE_UPDOWN;
