@@ -604,6 +604,16 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         }
         break;
     case DIR_NONE:
+        // Fall back into a hole in case we just climbed out of the hole
+        // and no direction to move.
+        if (y < MAP_HEIGHT - 1
+            && ai_hole(game, x, y + 1)
+            && !occupied(game, guard, x, y + 1)) {
+            state = GSTATE_FALL_RIGHT;
+            guard->hole = false;
+            guard->holey = -1;
+            move = true;
+        }
         break;
     case DIR_RIGHT:
         tx += MOVE_DX;
@@ -641,7 +651,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
 
         if (climb_out) {
             if (ai_hole(game, x, y) && guard->holey == y) {
-                if (!occupied(game, guard, x, y) && can_move(game, x, y - 1)) {
+                if (!occupied(game, guard, x, y - 1)
+                    && can_move(game, x, y - 1)) {
                     // Climb up from the hole if we can.
                     move = true;
                 }
