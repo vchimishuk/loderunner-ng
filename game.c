@@ -472,6 +472,7 @@ static void detect_collision(struct game *game)
     if (is_tile(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
+        game->level_score_iter = 0;
         sound_play(SOUND_DEAD);
     }
 
@@ -512,8 +513,11 @@ static void guard_render(SDL_Renderer *renderer, struct guard *g)
 
 static void game_reset(struct game *game)
 {
+    game->lost_gold = 0;
+    game->hladder = false;
+    game->won = false;
+
     runner_reset(game->runner);
-    game->lives -= 1;
 
     for (int i = 0; i < MAP_HEIGHT; i++) {
         for (int j = 0; j < MAP_WIDTH; j++) {
