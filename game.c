@@ -458,13 +458,13 @@ static void detect_collision(struct game *game)
         r->ngold++;
         game_score(game, SCORE_GOLD);
         sound_play(SOUND_GOLD);
-
-        // All gold have been picked up. Show hidden ladders
-        // and let the runner finish current game.
-        if (r->ngold == game->ngold) {
-            open_hladder(game);
-            sound_play(SOUND_HLADDER);
-        }
+    }
+    // All gold have been picked up. Show hidden ladders
+    // and let the runner finish current game.
+    if (!game->hladder && (r->ngold == game->ngold - game->lost_gold)) {
+        open_hladder(game);
+        game->hladder = true;
+        sound_play(SOUND_HLADDER);
     }
 
     // Runner's death: walled up in a wall or hit by a guard.
@@ -476,9 +476,7 @@ static void detect_collision(struct game *game)
     }
 
     // Runner has reached top of the screen.
-    if (r->y == 0 && (abs(0 - r->ty) <= TILE_MAP_HEIGHT / 4)
-        && game->ngold == r->ngold) {
-
+    if (game->hladder && r->y == 0 && (abs(0 - r->ty) <= TILE_MAP_HEIGHT / 4)) {
         game->won = true;
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
@@ -548,6 +546,8 @@ struct game *game_init(struct level *lvl)
     game->info_lives = NULL;
     game->info_level = NULL;
     game->ngold = 0;
+    game->lost_gold = 0;
+    game->hladder = false;
     game->won = false;
     game->score = 0;
     game->runner = runner_init();

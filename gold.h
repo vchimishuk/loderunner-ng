@@ -44,6 +44,6 @@ void gold_reset(struct gold *gold);
 struct gold *gold_get(struct game *g, int x, int y);
 struct gold *gold_pickup(struct game *g, int x, int y, int tx, int ty);
 void gold_drop(struct gold *g, int x, int y);
-void gold_lose(struct gold *g);
+void gold_lose(struct game *gm, struct gold *gld);
 
 #endif /* GOLD_H_ */

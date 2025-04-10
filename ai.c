@@ -142,7 +142,7 @@ static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
     if (is_tile(game, x, y - 1, MAP_TILE_EMPTY)) {
         gold_drop(guard->gold, x, y - 1);
     } else {
-        gold_lose(guard->gold);
+        gold_lose(game, guard->gold);
     }
 
     guard->gold = NULL;
@@ -717,6 +717,13 @@ void ai_reborn(struct game *game, struct guard *guard)
     guard->holey = -1;
     guard->state = GSTATE_REBORN;
     guard->cura = guard_state_animation(guard, GSTATE_REBORN);
+
+    // Lose gold in case guard died holding it. It happens during some
+    // multi-tier holes combinations.
+    if (guard->gold != NULL) {
+        gold_lose(game, guard->gold);
+        guard->gold = NULL;
+    }
 }
 
 // Callback to move guards.

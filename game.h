@@ -90,6 +90,12 @@ struct game {
     int nguards;
     struct gold *gold[MAX_GOLD];
     int ngold;
+    // Number of lost golds. Lost gold cannot be picked up and is not
+    // taken into account when checking for the level finish.
+    int lost_gold;
+    // Is hidden ladder is visible. Technically means that runner picked up
+    // all the gold and can finish the level.
+    bool hladder;
     bool won;
     // Current user score.
     int score;

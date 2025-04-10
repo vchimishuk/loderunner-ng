@@ -81,7 +81,9 @@ void gold_drop(struct gold *g, int x, int y)
     g->visible = true;
 }
 
-void gold_lose(struct gold *g)
+void gold_lose(struct game *gm, struct gold *gld)
 {
-    g->lost = true;
+    gm->lost_gold += 1;
+    gld->lost = true;
+    gld->visible = false;
 }
