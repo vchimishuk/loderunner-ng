@@ -24,9 +24,9 @@ Application also supports some useful command-line options.
 * `Down` -- move down
 * `X` -- dig hole right to the runner
 * `Z` -- dig hole right to the runner
-* `P` -- pause
-* `Escape`/`Q` -- quit
-* `Enter` -- skip keyhole animation
+* `P`, `Escape` -- pause
+* `Q` -- quit
+* `Enter` -- start game; skip keyhole animation
 
 ### Copying
 The program's source code (excluding textures and sounds), is released under the GNU General Public License version 3 or later, which is distributed in the COPYING file. Textures and sound belongs to [LodeRunner_TotalRecall](https://github.com/SimonHung/LodeRunner_TotalRecall) project by Simon Hung.
