@@ -32,5 +32,6 @@ bool can_move(struct game *game, int x, int y)
 
     return is_tile(game, x, y, MAP_TILE_EMPTY)
         || is_tile(game, x, y, MAP_TILE_LADDER)
-        || is_tile(game, x, y, MAP_TILE_ROPE);
+        || is_tile(game, x, y, MAP_TILE_ROPE)
+        || is_tile(game, x, y, MAP_TILE_FALSE);
 }
