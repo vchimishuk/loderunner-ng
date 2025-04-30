@@ -333,7 +333,8 @@ static void runner_tick(struct game *game, int key)
                 // Runner starts falling down from the ladder.
                 state = RSTATE_FALL_RIGHT;
                 move = true;
-            } else if (ty > 0 && !can_move(game, x, y + 1)) {
+            } else if (ty > 0 && !can_move(game, x, y + 1)
+                && !is_tile(game, x, y + 1, MAP_TILE_FALSE)) {
                 // Cannot move down any more -- ladder standing on the ground.
                 move = false;
             } else {

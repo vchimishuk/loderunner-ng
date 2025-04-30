@@ -531,7 +531,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         }
         if (occupied(game, guard, x, y)
             || (ty >= 0 && occupied(game, guard, x, y + 1))
-            || (ty >= 0 && !can_move(game, x, y + 1))) {
+            || (ty >= 0 && !can_move(game, x, y + 1)
+                && !is_tile(game, x, y, MAP_TILE_FALSE))) {
             move = false;
         } else {
             if (!is_tile(game, x, y, MAP_TILE_LADDER) &&

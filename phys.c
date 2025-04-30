@@ -23,7 +23,8 @@ bool is_tile(struct game *game, int x, int y, enum map_tile_t t)
     return game->map[y][x]->curt == t;
 }
 
-// Returns true if runner can move to tile with x:y coordinates.
+// Returns true if guard or runner can move to tile with x:y coordinates.
+// False bricks are checked manually in-place when falling down.
 bool can_move(struct game *game, int x, int y)
 {
     if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) {
@@ -32,6 +33,5 @@ bool can_move(struct game *game, int x, int y)
 
     return is_tile(game, x, y, MAP_TILE_EMPTY)
         || is_tile(game, x, y, MAP_TILE_LADDER)
-        || is_tile(game, x, y, MAP_TILE_ROPE)
-        || is_tile(game, x, y, MAP_TILE_FALSE);
+        || is_tile(game, x, y, MAP_TILE_ROPE);
 }
