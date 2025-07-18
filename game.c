@@ -447,6 +447,53 @@ static void open_hladder(struct game *g)
 }
 
 /*
+ * Check for a guard around the runner which we may collide with.
+ */
+static struct guard *guard_collision(struct game *g, struct runner *r)
+{
+    struct guard *gd;
+
+    gd = game_guard_get(g, r->x, r->y);
+    if (gd != NULL) {
+        return gd;
+    }
+
+    // Look right.
+    gd = game_guard_get(g, r->x + 1, r->y);
+    if (gd != NULL) {
+        if (gd->tx - r->tx < 0) {
+            return gd;
+        }
+    }
+
+    // Look down.
+    gd = game_guard_get(g, r->x, r->y + 1);
+    if (gd != NULL) {
+        if (gd->ty - r->ty < 0) {
+            return gd;
+        }
+    }
+
+    // Look left.
+    gd = game_guard_get(g, r->x - 1, r->y);
+    if (gd != NULL) {
+        if (r->tx - gd->tx < 0) {
+            return gd;
+        }
+    }
+
+    // Look up.
+    gd = game_guard_get(g, r->x, r->y - 1);
+    if (gd != NULL) {
+        if (r->ty - gd->ty < 0) {
+            return gd;
+        }
+    }
+
+    return NULL;
+}
+
+/*
  * Check game state for collisions: runner or guard death.
  */
 static void detect_collision(struct game *game)
@@ -469,7 +516,7 @@ static void detect_collision(struct game *game)
     }
 
     // Runner's death: walled up in a wall or hit by a guard.
-    struct guard *guard = game_guard_get(game, r->x, r->y);
+    struct guard *guard = guard_collision(game, r);
     if (is_tile(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
