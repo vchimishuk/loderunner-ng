@@ -373,7 +373,7 @@ static void runner_tick(struct game *game, int key)
                 state = RSTATE_DIG_RIGHT;
                 animation_reset(runner->holerighta);
                 sound_play(SOUND_DIG);
-                runner->tx = 0;
+                tx = 0;
                 move = true;
             } else {
                 move = false;
@@ -394,7 +394,7 @@ static void runner_tick(struct game *game, int key)
                 state = RSTATE_DIG_LEFT;
                 animation_reset(runner->holelefta);
                 sound_play(SOUND_DIG);
-                runner->tx = 0;
+                tx = 0;
                 move = true;
             } else {
                 move = false;
