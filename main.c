@@ -57,6 +57,28 @@ static void error(char *fmt, ...)
     va_end(ap);
 }
 
+static bool ignore_key(int key)
+{
+    return key != SDLK_RETURN && key != SDLK_SPACE && key != SDLK_q;
+}
+
+static bool quit_key(int key)
+{
+    return key == SDLK_q;
+}
+
+static int get_key(void)
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_KEYDOWN) {
+            return event.key.keysym.sym;
+        }
+    }
+
+    return 0;
+}
+
 // Render texture at the center of the screen.
 static void render_texture(SDL_Renderer *renderer, SDL_Texture *t)
 {
@@ -78,36 +100,29 @@ static void render_texture(SDL_Renderer *renderer, SDL_Texture *t)
     }
 }
 
-// Load texture from the file and render it at the center of the screen.
-static void render_texture_file(SDL_Renderer *renderer, char *file)
+// Load texture from file and render it at the center of the screen.
+// Wait for a key to continue or exit.
+// Returns true if quit game key has been pressed.
+static bool display_file(SDL_Renderer *renderer, char *file)
 {
     SDL_Texture *t = texture_load(renderer, file);
+    int k;
 
-    render_texture(renderer, t);
-    SDL_RenderPresent(renderer);
-    SDL_DestroyTexture(t);
-}
-
-// Wait for a key to start new game or quit the application.
-// Returns true if quit key received.
-static bool key_wait(void)
-{
     for (;;) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                case SDLK_RETURN:
-                case SDLK_SPACE:
-                    return false;
-                case SDLK_q:
-                    return true;
-                }
-            }
+        SDL_RenderClear(renderer);
+        render_texture(renderer, t);
+        SDL_RenderPresent(renderer);
+
+        k = get_key();
+        if (!ignore_key(k)) {
+            break;
         }
 
         SDL_Delay(FRAME_TIME);
     }
+    SDL_DestroyTexture(t);
+
+    return quit_key(k);
 }
 
 int main(int argc, char **argv)
@@ -187,40 +202,22 @@ int main(int argc, char **argv)
         die("failed to set renderer color: %s", SDL_GetError());
     }
 
-    /* SDL_Texture *block = texture_load(renderer, "block.png"); */
-    // SDL_Texture *brick = texture_load(renderer, "brick.png");
-
-    // blit(renderer, brick, 100, 100);
-
     texture_init(renderer);
     sound_init();
     sound_volume(volume);
 
-
-    /* struct tile_text *t = xmalloc(sizeof(struct tile_text)); */
-    /* t->texture = texture_get(TEXTURE_TEXT); */
-    /* t->ch = '5'; */
-    /* t->x = 10; */
-    /* t->y = 10; */
-    /* t->w = TILE_TEXT_WIDTH; */
-    /* t->h = TILE_TEXT_HEIGHT; */
-
-    /* SDL_Event event; */
-
-
     for (;;) {
-        SDL_RenderClear(renderer);
-        render_texture_file(renderer, "start.png");
-        if (key_wait()) {
+        bool quit;
+
+        quit = display_file(renderer, "start.png");
+        if (quit) {
             break;
         }
 
         struct level *lvl = level_init(start_level);
         struct game *game = game_init(lvl);
         bool pause = false;
-        bool quit = false;
         bool start = false;
-        bool won = false;
 
         double delay = 0;
         int key = 0;
@@ -282,8 +279,6 @@ int main(int argc, char **argv)
                 if (pause) {
                     render_texture(renderer, texture_get(TEXTURE_PAUSED));
                 }
-                // blit(renderer, brick, 100, 100);
-                /* render_tile_text(renderer, t); */
                 SDL_RenderPresent(renderer);
             }
 
@@ -294,9 +289,14 @@ int main(int argc, char **argv)
         }
 
     eog:
-        won = game->won;
-
         sound_stop();
+
+        if (!start && !quit) {
+            if (!game->won) {
+                quit = display_file(renderer, "gameover.png");
+            }
+        }
+
         game_destroy(game);
         level_destroy(lvl);
 
@@ -304,12 +304,6 @@ int main(int argc, char **argv)
             continue;
         }
         if (quit) {
-            break;
-        }
-        if (!won) {
-            render_texture_file(renderer, "gameover.png");
-        }
-        if (key_wait()) {
             break;
         }
     }
