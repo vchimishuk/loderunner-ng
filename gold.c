@@ -64,11 +64,14 @@ struct gold *gold_get(struct game *g, int x, int y)
 struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
 {
     struct gold *g = gold_get(game, x, y);
-    if (g != NULL
-        && ((tx == 0 && ty >= 0 && ty < MOVE_DY)
-            || (ty == 0 && tx >= 0 && tx < MOVE_DX))) {
-        g->visible = false;
-        return g;
+    if (g != NULL) {
+        // When gold hangs in air then pick it up only when falling on it
+        // from above.
+        if (!is_tile(game, x, y + 1, MAP_TILE_EMPTY)
+            || (ty < 0 && ty >= -MOVE_DY)) {
+            g->visible = false;
+            return g;
+        }
     }
 
     return NULL;
