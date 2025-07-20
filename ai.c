@@ -204,14 +204,11 @@ static enum dir ai_scan_level(struct game *game, struct guard *guard)
         // Check if we can walk on the next level or use ladder or rope on
         // the current level to avoid falling.
         //
-        // TODO: Handle also situations when there is a hole with a guard
-        //       trapped in that hole. In this case we can move on his head.
-        //       Check level 43.
-        //
         // TODO: Check nextlvl == MAP_TILE_ROPE for the level 92?
         if (lvl == MAP_TILE_LADDER || lvl == MAP_TILE_ROPE
             || nextlvl == MAP_TILE_SOLID || nextlvl == MAP_TILE_LADDER
-            || nextlvl == MAP_TILE_BRICK) {
+            || nextlvl == MAP_TILE_BRICK
+            || game_guard_get(game, gx, gy + 1) != NULL) {
             if (gx < rx) {
                 gx++;
             } else {
