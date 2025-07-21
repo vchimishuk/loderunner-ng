@@ -860,3 +860,10 @@ struct guard *game_guard_get(struct game *g, int x, int y)
 
     return NULL;
 }
+
+// Return true if tested map tile acts like a hole dug by the runner.
+bool game_hole(struct game *g, int x, int y)
+{
+    return g->map[y][x]->curt == MAP_TILE_EMPTY
+        && g->map[y][x]->baset == MAP_TILE_BRICK;
+}

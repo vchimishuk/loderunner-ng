@@ -151,13 +151,6 @@ static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
     guard->goldholds = -2;
 }
 
-// Return true if tested map tile acts like a hole dug by the runner.
-static bool ai_hole(struct game *g, int x, int y)
-{
-    return g->map[y][x]->curt == MAP_TILE_EMPTY
-        && g->map[y][x]->baset == MAP_TILE_BRICK;
-}
-
 // Check if tile at x:y coordinates has requested type and ignore holes dug
 // by the runner. Scanning doesn't treat holes as an empty space but keep seeing
 // them as bricks. However, since same-level scanning ignores bricks it ignores
@@ -165,7 +158,7 @@ static bool ai_hole(struct game *g, int x, int y)
 bool is_tilenh(struct game *game, int x, int y, enum map_tile_t t)
 {
     if (t == MAP_TILE_BRICK) {
-        return is_tile(game, x, y, t) || ai_hole(game, x, y);
+        return is_tile(game, x, y, t) || game_hole(game, x, y);
     }
 
     return is_tile(game, x, y, t);
@@ -193,22 +186,26 @@ static enum dir ai_scan_level(struct game *game, struct guard *guard)
     }
 
     while (gx != rx) {
-        enum map_tile_t lvl = game->map[gy][gx]->baset;
+        enum map_tile_t lvl = game->map[gy][gx]->curt;
         enum map_tile_t nextlvl;
         if (gy < MAP_HEIGHT - 1) {
-            nextlvl = game->map[gy + 1][gx]->baset;
+            nextlvl = game->map[gy + 1][gx]->curt;
         } else {
             nextlvl = MAP_TILE_SOLID;
         }
+        bool hole = game_hole(game, gx, gy + 1);
+        struct guard *gd = game_guard_get(game, gx, gy + 1);
 
-        // Check if we can walk on the next level or use ladder or rope on
-        // the current level to avoid falling.
+        // Check if we can walk over the next level block or use ladder or rope on
+        // the current one to avoid falling.
         //
         // TODO: Check nextlvl == MAP_TILE_ROPE for the level 92?
         if (lvl == MAP_TILE_LADDER || lvl == MAP_TILE_ROPE
-            || nextlvl == MAP_TILE_SOLID || nextlvl == MAP_TILE_LADDER
+            || (nextlvl == MAP_TILE_EMPTY && hole)
+            || nextlvl == MAP_TILE_SOLID
+            || nextlvl == MAP_TILE_LADDER
             || nextlvl == MAP_TILE_BRICK
-            || game_guard_get(game, gx, gy + 1) != NULL) {
+            || gd != NULL) {
             if (gx < rx) {
                 gx++;
             } else {
@@ -555,11 +552,11 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         }
         bool trapped = false;
 
-        if (ty < 0 && ai_hole(game, x, y)) {
+        if (ty < 0 && game_hole(game, x, y)) {
             guard->holey = y;
         }
         if (ty >= 0) {
-            if (ai_hole(game, x, y) && guard->holey == y) {
+            if (game_hole(game, x, y) && guard->holey == y) {
                 trapped = true;
                 guard->hole = true;
                 ty = 0;
@@ -605,7 +602,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         // Fall back into a hole in case we just climbed out of the hole
         // and no direction to move.
         if (y < MAP_HEIGHT - 1
-            && ai_hole(game, x, y + 1)
+            && game_hole(game, x, y + 1)
             && !occupied(game, guard, x, y + 1)) {
             state = GSTATE_FALL_RIGHT;
             guard->hole = false;
@@ -648,7 +645,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         bool climb_out = guard->state == GSTATE_CLIMB_OUT;
 
         if (climb_out) {
-            if (ai_hole(game, x, y) && guard->holey == y) {
+            if (game_hole(game, x, y) && guard->holey == y) {
                 if (!occupied(game, guard, x, y - 1)
                     && can_move(game, x, y - 1)) {
                     // Climb up from the hole if we can.
@@ -696,7 +693,7 @@ void ai_reborn(struct game *game, struct guard *guard)
     int xs = x;
 
     // Avoid guard to be born in holes or where gold lays.
-    while (!is_tile(game, x, y, MAP_TILE_EMPTY) || ai_hole(game, x, y)
+    while (!is_tile(game, x, y, MAP_TILE_EMPTY) || game_hole(game, x, y)
         || gold_get(game, x, y) != NULL) {
 
         x = ai_rand_rebornx();
