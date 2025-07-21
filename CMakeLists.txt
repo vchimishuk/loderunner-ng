@@ -41,7 +41,6 @@ add_executable(loderunner-ng
                    level.c
                    main.c
                    path.c
-                   phys.c
                    runner.c
                    sound.c
                    texture.c

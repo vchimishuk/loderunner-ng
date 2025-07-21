@@ -17,7 +17,6 @@
 
 #include "exit.h"
 #include "guard.h"
-#include "phys.h"
 #include "texture.h"
 #include "xmalloc.h"
 

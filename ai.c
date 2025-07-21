@@ -22,7 +22,6 @@
 #include "gold.h"
 #include "guard.h"
 #include "level.h"
-#include "phys.h"
 #include "sound.h"
 
 // TODO: Should we join ai.c and guard.c.
@@ -69,7 +68,7 @@ enum dir {
 // the same guard as one represented by `me` argument.
 static bool occupied(struct game *game, struct guard *me, int x, int y)
 {
-    struct guard *g = game_guard_get(game, x, y);
+    struct guard *g = game_guard(game, x, y);
 
     return g != NULL && g != me;
 }
@@ -114,11 +113,11 @@ static void ai_drop_gold(struct game *game, struct guard *guard)
         guard->goldholds++;
     } else if (guard->goldholds == 0
         && guard->gold != NULL
-        && is_tile(game, x, y, MAP_TILE_EMPTY)
+        && game_tile_t(game, x, y, MAP_TILE_EMPTY)
         && ((y == MAP_HEIGHT - 1)
-            || (is_tile(game, x, y + 1, MAP_TILE_BRICK)
-                || is_tile(game, x, y + 1, MAP_TILE_SOLID)
-                || is_tile(game, x, y + 1, MAP_TILE_LADDER)))) {
+            || (game_tile_t(game, x, y + 1, MAP_TILE_BRICK)
+                || game_tile_t(game, x, y + 1, MAP_TILE_SOLID)
+                || game_tile_t(game, x, y + 1, MAP_TILE_LADDER)))) {
         gold_drop(guard->gold, x, y);
         guard->gold = NULL;
         // Set gold holding counter to -1 to prevent picking up the gold we have
@@ -139,7 +138,7 @@ static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
 
     int x = guard->x;
     int y = guard->y;
-    if (is_tile(game, x, y - 1, MAP_TILE_EMPTY)) {
+    if (game_tile_t(game, x, y - 1, MAP_TILE_EMPTY)) {
         gold_drop(guard->gold, x, y - 1);
     } else {
         gold_lose(game, guard->gold);
@@ -155,13 +154,13 @@ static void ai_drop_gold_trapped(struct game *game, struct guard *guard)
 // by the runner. Scanning doesn't treat holes as an empty space but keep seeing
 // them as bricks. However, since same-level scanning ignores bricks it ignores
 // holes as well.
-bool is_tilenh(struct game *game, int x, int y, enum map_tile_t t)
+static bool tile_t_nh(struct game *game, int x, int y, enum map_tile_t t)
 {
     if (t == MAP_TILE_BRICK) {
-        return is_tile(game, x, y, t) || game_hole(game, x, y);
+        return game_tile_t(game, x, y, t) || game_hole(game, x, y);
     }
 
-    return is_tile(game, x, y, t);
+    return game_tile_t(game, x, y, t);
 }
 
 // Return true if guard is looking right.
@@ -194,7 +193,7 @@ static enum dir ai_scan_level(struct game *game, struct guard *guard)
             nextlvl = MAP_TILE_SOLID;
         }
         bool hole = game_hole(game, gx, gy + 1);
-        struct guard *gd = game_guard_get(game, gx, gy + 1);
+        struct guard *gd = game_guard(game, gx, gy + 1);
 
         // Check if we can walk over the next level block or use ladder or rope on
         // the current one to avoid falling.
@@ -241,27 +240,27 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
 {
     // Return "no route" if cannot move down.
     if (y == MAP_HEIGHT - 1
-        || is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
-        || is_tilenh(game, x, y + 1, MAP_TILE_SOLID)) {
+        || tile_t_nh(game, x, y + 1, MAP_TILE_BRICK)
+        || tile_t_nh(game, x, y + 1, MAP_TILE_SOLID)) {
         return RATING_MAX;
     }
 
     // Until we haven't reached the ground.
-    while (y < MAP_HEIGHT - 1 && !is_tilenh(game, x, y + 1, MAP_TILE_BRICK)
-        && !is_tilenh(game, x, y + 1, MAP_TILE_SOLID)) {
+    while (y < MAP_HEIGHT - 1 && !tile_t_nh(game, x, y + 1, MAP_TILE_BRICK)
+        && !tile_t_nh(game, x, y + 1, MAP_TILE_SOLID)) {
 
         // Try to trace left and right if we can (not in a freefall mode).
-        if (!is_tilenh(game, x, y, MAP_TILE_EMPTY)) {
+        if (!tile_t_nh(game, x, y, MAP_TILE_EMPTY)) {
             // Check if we can turn left.
             if (x > 0) {
                 // Check if we can potentially move left.
                 // This check looks strange, as we do not check if there is an empty
                 // tile at x-1:y where the guard can move into. But this is how it
                 // is implemented in the original code.
-                if (is_tilenh(game, x - 1, y + 1, MAP_TILE_BRICK)
-                    || is_tilenh(game, x - 1, y + 1, MAP_TILE_SOLID)
-                    || is_tilenh(game, x - 1, y + 1, MAP_TILE_LADDER)
-                    || is_tilenh(game, x - 1, y, MAP_TILE_ROPE)) {
+                if (tile_t_nh(game, x - 1, y + 1, MAP_TILE_BRICK)
+                    || tile_t_nh(game, x - 1, y + 1, MAP_TILE_SOLID)
+                    || tile_t_nh(game, x - 1, y + 1, MAP_TILE_LADDER)
+                    || tile_t_nh(game, x - 1, y, MAP_TILE_ROPE)) {
                     // No need to keep moving down if we are already
                     // below the runner.
                     if (y >= game->runner->y) {
@@ -271,10 +270,10 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
             }
             // The same check for right.
             if (x < MAP_WIDTH - 1) {
-                if (is_tilenh(game, x + 1, y + 1, MAP_TILE_BRICK)
-                    || is_tilenh(game, x + 1, y + 1, MAP_TILE_SOLID)
-                    || is_tilenh(game, x + 1, y + 1, MAP_TILE_LADDER)
-                    || is_tilenh(game, x + 1, y, MAP_TILE_ROPE)) {
+                if (tile_t_nh(game, x + 1, y + 1, MAP_TILE_BRICK)
+                    || tile_t_nh(game, x + 1, y + 1, MAP_TILE_SOLID)
+                    || tile_t_nh(game, x + 1, y + 1, MAP_TILE_LADDER)
+                    || tile_t_nh(game, x + 1, y, MAP_TILE_ROPE)) {
                     if (y >= game->runner->y) {
                         break;
                     }
@@ -299,11 +298,11 @@ static int ai_scan_down(struct game *game, int x, int y, int startx)
 static int ai_scan_up(struct game *game, int x, int y, int startx)
 {
     // We cannot move up without ladder for sure.
-    if (!is_tilenh(game, x, y, MAP_TILE_LADDER)) {
+    if (!tile_t_nh(game, x, y, MAP_TILE_LADDER)) {
         return RATING_MAX;
     }
 
-    while (y > 0 && is_tilenh(game, x, y, MAP_TILE_LADDER)) {
+    while (y > 0 && tile_t_nh(game, x, y, MAP_TILE_LADDER)) {
         y--;
 
         if (x > 0) {
@@ -311,10 +310,10 @@ static int ai_scan_up(struct game *game, int x, int y, int startx)
             // This check looks strange, as we do not check if there is an empty
             // tile at x-1:y where the guard can move into. But this is how it
             // is implemented in the original code.
-            if (is_tilenh(game, x - 1, y + 1, MAP_TILE_BRICK)
-                || is_tilenh(game, x - 1, y + 1, MAP_TILE_SOLID)
-                || is_tilenh(game, x - 1, y + 1, MAP_TILE_LADDER)
-                || is_tilenh(game, x - 1, y, MAP_TILE_ROPE)) {
+            if (tile_t_nh(game, x - 1, y + 1, MAP_TILE_BRICK)
+                || tile_t_nh(game, x - 1, y + 1, MAP_TILE_SOLID)
+                || tile_t_nh(game, x - 1, y + 1, MAP_TILE_LADDER)
+                || tile_t_nh(game, x - 1, y, MAP_TILE_ROPE)) {
                 // No need to keep moving up if we are already above the runner.
                 if (y <= game->runner->y) {
                     break;
@@ -323,10 +322,10 @@ static int ai_scan_up(struct game *game, int x, int y, int startx)
         }
         // Perform the same logic for the right edge of the ladder.
         if (x < MAP_WIDTH) {
-            if (is_tilenh(game, x + 1, y + 1, MAP_TILE_BRICK)
-                || is_tilenh(game, x + 1, y + 1, MAP_TILE_SOLID)
-                || is_tilenh(game, x + 1, y + 1, MAP_TILE_LADDER)
-                || is_tilenh(game, x + 1, y, MAP_TILE_ROPE)) {
+            if (tile_t_nh(game, x + 1, y + 1, MAP_TILE_BRICK)
+                || tile_t_nh(game, x + 1, y + 1, MAP_TILE_SOLID)
+                || tile_t_nh(game, x + 1, y + 1, MAP_TILE_LADDER)
+                || tile_t_nh(game, x + 1, y, MAP_TILE_ROPE)) {
                 if (y <= game->runner->y) {
                     break;
                 }
@@ -364,20 +363,20 @@ static int ai_scan_horizontal(struct game *game, int x, int y, bool left)
 
         // Horisontal scanning should not ignore holes, so guard can walks
         // out from a cave.
-        if (is_tile(game, x + dx, y, MAP_TILE_BRICK)
-            || is_tile(game, x + dx, y, MAP_TILE_SOLID)) {
+        if (game_tile_t(game, x + dx, y, MAP_TILE_BRICK)
+            || game_tile_t(game, x + dx, y, MAP_TILE_SOLID)) {
             // We have reached a wall.
             break;
         }
 
         // Can climb left despite what is under the feet.
-        bool climb = is_tilenh(game, x + dx, y, MAP_TILE_LADDER)
-            || is_tilenh(game, x + dx, y, MAP_TILE_ROPE);
+        bool climb = tile_t_nh(game, x + dx, y, MAP_TILE_LADDER)
+            || tile_t_nh(game, x + dx, y, MAP_TILE_ROPE);
         // Can walk over the solid ground.
         bool walk = (y == MAP_HEIGHT - 1)
-            || (is_tilenh(game, x + dx, y + 1, MAP_TILE_BRICK)
-                || is_tilenh(game, x + dx, y + 1, MAP_TILE_SOLID)
-                || is_tilenh(game, x + dx, y + 1, MAP_TILE_LADDER));
+            || (tile_t_nh(game, x + dx, y + 1, MAP_TILE_BRICK)
+                || tile_t_nh(game, x + dx, y + 1, MAP_TILE_SOLID)
+                || tile_t_nh(game, x + dx, y + 1, MAP_TILE_LADDER));
 
         x += dx;
 
@@ -418,17 +417,17 @@ static bool ai_falling(struct game *game, struct guard *guard)
     int ty = guard->ty;
     int hdy = MOVE_DY / 2;
 
-    if (is_tile(game, x, y, MAP_TILE_LADDER)
-        || (is_tile(game, x, y, MAP_TILE_ROPE) && (ty > -hdy && ty <= hdy))) {
+    if (game_tile_t(game, x, y, MAP_TILE_LADDER)
+        || (game_tile_t(game, x, y, MAP_TILE_ROPE) && (ty > -hdy && ty <= hdy))) {
         return false;
     }
 
     if (ty < 0
         || (y < MAP_HEIGHT - 1
-            && !is_tile(game, x, y + 1, MAP_TILE_BRICK)
-            && !is_tile(game, x, y + 1, MAP_TILE_SOLID)
-            && !is_tile(game, x, y + 1, MAP_TILE_LADDER)
-            && !game_guard_get(game, x, y + 1))) {
+            && !game_tile_t(game, x, y + 1, MAP_TILE_BRICK)
+            && !game_tile_t(game, x, y + 1, MAP_TILE_SOLID)
+            && !game_tile_t(game, x, y + 1, MAP_TILE_LADDER)
+            && !game_guard(game, x, y + 1))) {
         return true;
     }
 
@@ -525,12 +524,12 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
         }
         if (occupied(game, guard, x, y)
             || (ty >= 0 && occupied(game, guard, x, y + 1))
-            || (ty >= 0 && !can_move(game, x, y + 1)
-                && !is_tile(game, x, y, MAP_TILE_FALSE))) {
+            || (ty >= 0 && !game_can_move(game, x, y + 1)
+                && !game_tile_t(game, x, y, MAP_TILE_FALSE))) {
             move = false;
         } else {
-            if (!is_tile(game, x, y, MAP_TILE_LADDER) &&
-                !is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
+            if (!game_tile_t(game, x, y, MAP_TILE_LADDER) &&
+                !game_tile_t(game, x, y + 1, MAP_TILE_LADDER)) {
                 if (ai_looking_right(state)) {
                     state = GSTATE_FALL_RIGHT;
                 } else {
@@ -564,8 +563,8 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
                 game_score(game, SCORE_TRAP);
                 sound_play(SOUND_TRAP);
             } else if (occupied(game, guard, x, y)
-                || (!can_move(game, x, y + 1)
-                    && !is_tile(game, x, y + 1, MAP_TILE_FALSE))) {
+                || (!game_can_move(game, x, y + 1)
+                    && !game_tile_t(game, x, y + 1, MAP_TILE_FALSE))) {
                 ty = 0;
             }
         }
@@ -587,10 +586,10 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             ai_drop_gold(game, guard);
         }
         if (occupied(game, guard, x, y)
-            || (tx < 0 && !can_move(game, x - 1, y))) {
+            || (tx < 0 && !game_can_move(game, x - 1, y))) {
             move = false;
         } else {
-            if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+            if (game_tile_t(game, x, y, MAP_TILE_ROPE)) {
                 state = GSTATE_CLIMB_LEFT;
             } else {
                 state = GSTATE_LEFT;
@@ -621,10 +620,10 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             ai_drop_gold(game, guard);
         }
         if (occupied(game, guard, x, y)
-            || (tx > 0 && !can_move(game, x + 1, y))) {
+            || (tx > 0 && !game_can_move(game, x + 1, y))) {
             move = false;
         } else {
-            if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+            if (game_tile_t(game, x, y, MAP_TILE_ROPE)) {
                 state = GSTATE_CLIMB_RIGHT;
             } else {
                 state = GSTATE_RIGHT;
@@ -641,13 +640,13 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             ai_drop_gold(game, guard);
         }
 
-        bool onladder = is_tile(game, x, y, MAP_TILE_LADDER);
+        bool onladder = game_tile_t(game, x, y, MAP_TILE_LADDER);
         bool climb_out = guard->state == GSTATE_CLIMB_OUT;
 
         if (climb_out) {
             if (game_hole(game, x, y) && guard->holey == y) {
                 if (!occupied(game, guard, x, y - 1)
-                    && can_move(game, x, y - 1)) {
+                    && game_can_move(game, x, y - 1)) {
                     // Climb up from the hole if we can.
                     move = true;
                 }
@@ -658,7 +657,7 @@ static void ai_move_guard(struct game *game, struct guard *guard, enum dir d)
             }
         } else if (occupied(game, guard, x, y)
             || (ty < 0 && occupied(game, guard, x, y - 1))
-            || (ty < 0 && (!onladder || !can_move(game, x, y - 1)))) {
+            || (ty < 0 && (!onladder || !game_can_move(game, x, y - 1)))) {
             move = false;
         } else {
             state = GSTATE_UPDOWN;
@@ -693,7 +692,7 @@ void ai_reborn(struct game *game, struct guard *guard)
     int xs = x;
 
     // Avoid guard to be born in holes or where gold lays.
-    while (!is_tile(game, x, y, MAP_TILE_EMPTY) || game_hole(game, x, y)
+    while (!game_tile_t(game, x, y, MAP_TILE_EMPTY) || game_hole(game, x, y)
         || gold_get(game, x, y) != NULL) {
 
         x = ai_rand_rebornx();
@@ -782,7 +781,7 @@ void ai_tick(struct game *game)
 
         // If guard walled up in the wall it becomes dead and should be reborn.
         if (g->state != GSTATE_REBORN
-            && is_tile(game, g->x, g->y, MAP_TILE_BRICK)) {
+            && game_tile_t(game, g->x, g->y, MAP_TILE_BRICK)) {
             ai_reborn(game, g);
         }
     }

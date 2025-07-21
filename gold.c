@@ -17,7 +17,6 @@
 
 #include "game.h"
 #include "gold.h"
-#include "phys.h"
 #include "xmalloc.h"
 
 struct gold *gold_init(int x, int y)
@@ -65,10 +64,10 @@ struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
 {
     struct gold *g = gold_get(game, x, y);
     if (g != NULL) {
-        struct guard *gd = game_guard_get(game, x, y + 1);
+        struct guard *gd = game_guard(game, x, y + 1);
         // When gold hangs in air then pick it up only when falling on it
         // from above.
-        if (!is_tile(game, x, y + 1, MAP_TILE_EMPTY)
+        if (!game_tile_t(game, x, y + 1, MAP_TILE_EMPTY)
             || (ty < 0 && ty >= -MOVE_DY)
             || gd != NULL) {
             g->visible = false;

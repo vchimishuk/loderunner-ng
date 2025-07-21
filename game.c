@@ -25,14 +25,10 @@
 #include "guard.h"
 #include "keyhole.h"
 #include "level.h"
-#include "phys.h"
 #include "runner.h"
 #include "sound.h"
 #include "texture.h"
 #include "xmalloc.h"
-
-static const int RUNNER_DX = 8;
-static const int RUNNER_DY = 9;
 
 static int min(int a, int b)
 {
@@ -41,6 +37,11 @@ static int min(int a, int b)
     } else {
         return b;
     }
+}
+
+static bool valid_map_xy(int x, int y)
+{
+    return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
 }
 
 static bool skip_keyhole(int key)
@@ -169,8 +170,8 @@ static void text_sprites_destroy(struct sprite **s)
 
 static bool empty_tile(struct game *game, int x, int y)
 {
-    return is_tile(game, x, y, MAP_TILE_EMPTY)
-        || is_tile(game, x, y, MAP_TILE_FALSE);
+    return game_tile_t(game, x, y, MAP_TILE_EMPTY)
+        || game_tile_t(game, x, y, MAP_TILE_FALSE);
 }
 
 static void lives_inc(struct game *game)
@@ -199,7 +200,7 @@ static void runner_tick(struct game *game, int key)
         bool replay = animation_tick(runner->cura);
         int gx = state == RSTATE_DIG_LEFT ? runner->x - 1 : runner->x + 1;
         int gy = runner->y;
-        struct guard *g = game_guard_get(game, gx, gy);
+        struct guard *g = game_guard(game, gx, gy);
 
         int hx = state == RSTATE_DIG_LEFT ? runner->x - 1 : runner->x + 1;
         int hy = runner->y + 1;
@@ -221,10 +222,10 @@ static void runner_tick(struct game *game, int key)
             }
         }
     } else if ((state == RSTATE_FALL_LEFT || state == RSTATE_FALL_RIGHT)
-        || ((empty_tile(game, x, y + 1) || is_tile(game, x, y + 1, MAP_TILE_ROPE))
-            && !is_tile(game, x, y, MAP_TILE_ROPE)
-            && !is_tile(game, x, y, MAP_TILE_LADDER)
-            && game_guard_get(game, x, y + 1) == NULL)) {
+        || ((empty_tile(game, x, y + 1) || game_tile_t(game, x, y + 1, MAP_TILE_ROPE))
+            && !game_tile_t(game, x, y, MAP_TILE_ROPE)
+            && !game_tile_t(game, x, y, MAP_TILE_LADDER)
+            && game_guard(game, x, y + 1) == NULL)) {
         // Continue falling process or start falling if runner is stending on
         // empty tile.
 
@@ -240,7 +241,7 @@ static void runner_tick(struct game *game, int key)
         }
         move = true;
         tx = 0;
-        ty += RUNNER_DY;
+        ty += MOVE_DY;
         if (ty > TILE_MAP_HEIGHT / 2) {
             y += 1;
             ty -= TILE_MAP_HEIGHT;
@@ -249,7 +250,7 @@ static void runner_tick(struct game *game, int key)
         // Grab the rope when falling. Grab it only if runner was falling
         // initially and not dropped the rope he was hanging before. Which
         // can be detected by ty value.
-        if (is_tile(game, x, y, MAP_TILE_ROPE) && (ty > 0 && ty < RUNNER_DY)) {
+        if (game_tile_t(game, x, y, MAP_TILE_ROPE) && (ty > 0 && ty < MOVE_DY)) {
             ty = 0;
             if (state == RSTATE_FALL_LEFT) {
                 state = RSTATE_CLIMB_LEFT;
@@ -260,8 +261,8 @@ static void runner_tick(struct game *game, int key)
             sound_play(SOUND_DOWN);
         } else if (ty >= 0
             && ((!empty_tile(game, x, y + 1)
-                    && !is_tile(game, x, y + 1, MAP_TILE_ROPE))
-                || game_guard_get(game, x, y + 1) != NULL)) {
+                    && !game_tile_t(game, x, y + 1, MAP_TILE_ROPE))
+                || game_guard(game, x, y + 1) != NULL)) {
             // Stop, we have reached some solid ground.
             ty = 0;
             state = RSTATE_STOP;
@@ -271,16 +272,16 @@ static void runner_tick(struct game *game, int key)
     } else if (key != 0) {
         switch (key) {
         case SDLK_LEFT:
-            tx -= RUNNER_DX;
+            tx -= MOVE_DX;
             ty = 0;
             if (tx < -(TILE_MAP_WIDTH / 2)) {
                 x -= 1;
                 tx += TILE_MAP_WIDTH;
             }
-            if (tx < 0 && !can_move(game, x - 1, y)) {
+            if (tx < 0 && !game_can_move(game, x - 1, y)) {
                 move = false;
             } else {
-                if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+                if (game_tile_t(game, x, y, MAP_TILE_ROPE)) {
                     state = RSTATE_CLIMB_LEFT;
                 } else {
                     state = RSTATE_LEFT;
@@ -289,16 +290,16 @@ static void runner_tick(struct game *game, int key)
             }
             break;
         case SDLK_RIGHT:
-            tx += RUNNER_DX;
+            tx += MOVE_DX;
             ty = 0;
             if (tx > TILE_MAP_WIDTH / 2) {
                 x += 1;
                 tx -= TILE_MAP_WIDTH;
             }
-            if (tx > 0 && !can_move(game, x + 1, y)) {
+            if (tx > 0 && !game_can_move(game, x + 1, y)) {
                 move = false;
             } else {
-                if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+                if (game_tile_t(game, x, y, MAP_TILE_ROPE)) {
                     state = RSTATE_CLIMB_RIGHT;
                 } else {
                     state = RSTATE_RIGHT;
@@ -307,14 +308,14 @@ static void runner_tick(struct game *game, int key)
             }
             break;
         case SDLK_UP:
-            ty -= RUNNER_DY;
+            ty -= MOVE_DY;
             tx = 0;
             if (ty < -(TILE_MAP_HEIGHT / 2)) {
                 y -= 1;
                 ty += TILE_MAP_HEIGHT;
             }
-            bool onladder = is_tile(game, x, y, MAP_TILE_LADDER);
-            if (ty < 0 && (!onladder || !can_move(game, x, y - 1))) {
+            bool onladder = game_tile_t(game, x, y, MAP_TILE_LADDER);
+            if (ty < 0 && (!onladder || !game_can_move(game, x, y - 1))) {
                 move = false;
             } else {
                 state = RSTATE_UPDOWN;
@@ -322,7 +323,7 @@ static void runner_tick(struct game *game, int key)
             }
             break;
         case SDLK_DOWN:
-            ty += RUNNER_DY;
+            ty += MOVE_DY;
             tx = 0;
             if (ty > TILE_MAP_HEIGHT / 2) {
                 y += 1;
@@ -333,15 +334,15 @@ static void runner_tick(struct game *game, int key)
                 // Runner starts falling down from the ladder.
                 state = RSTATE_FALL_RIGHT;
                 move = true;
-            } else if (ty > 0 && !can_move(game, x, y + 1)
-                && !is_tile(game, x, y + 1, MAP_TILE_FALSE)) {
+            } else if (ty > 0 && !game_can_move(game, x, y + 1)
+                && !game_tile_t(game, x, y + 1, MAP_TILE_FALSE)) {
                 // Cannot move down any more -- ladder standing on the ground.
                 move = false;
             } else {
-                if (is_tile(game, x, y, MAP_TILE_ROPE)) {
+                if (game_tile_t(game, x, y, MAP_TILE_ROPE)) {
                     // Hanging on the rope, drop it, start falling down
                     // or climb over ladder if any.
-                    if (is_tile(game, x, y + 1, MAP_TILE_LADDER)) {
+                    if (game_tile_t(game, x, y + 1, MAP_TILE_LADDER)) {
                         state = RSTATE_UPDOWN;
                     } else {
                         if (state == RSTATE_CLIMB_RIGHT) {
@@ -360,10 +361,10 @@ static void runner_tick(struct game *game, int key)
             break;
         case SDLK_x:
             // Dig only bricks with empty gold-free space above.
-            if (is_tile(game, x + 1, y + 1, MAP_TILE_BRICK)
-                && is_tile(game, x + 1, y, MAP_TILE_EMPTY)
+            if (game_tile_t(game, x + 1, y + 1, MAP_TILE_BRICK)
+                && game_tile_t(game, x + 1, y, MAP_TILE_EMPTY)
                 && gold_get(game, x + 1, y) == NULL
-                && game_guard_get(game, x + 1, y) == NULL) {
+                && game_guard(game, x + 1, y) == NULL) {
 
                 struct map_tile *t = game->map[runner->y + 1][runner->x + 1];
                 // Make sure we do not need to free animation.
@@ -381,10 +382,10 @@ static void runner_tick(struct game *game, int key)
             break;
         case SDLK_z:
             // Dig only bricks with empty space above.
-            if (is_tile(game, x - 1, y + 1, MAP_TILE_BRICK)
-                && is_tile(game, x - 1, y, MAP_TILE_EMPTY)
+            if (game_tile_t(game, x - 1, y + 1, MAP_TILE_BRICK)
+                && game_tile_t(game, x - 1, y, MAP_TILE_EMPTY)
                 && gold_get(game, x - 1, y) == NULL
-                && game_guard_get(game, x + 1, y) == NULL) {
+                && game_guard(game, x + 1, y) == NULL) {
 
                 struct map_tile *t = game->map[runner->y + 1][runner->x - 1];
                 // Make sure we do not need to free animation.
@@ -453,13 +454,13 @@ static struct guard *guard_collision(struct game *g, struct runner *r)
 {
     struct guard *gd;
 
-    gd = game_guard_get(g, r->x, r->y);
+    gd = game_guard(g, r->x, r->y);
     if (gd != NULL) {
         return gd;
     }
 
     // Look right.
-    gd = game_guard_get(g, r->x + 1, r->y);
+    gd = game_guard(g, r->x + 1, r->y);
     if (gd != NULL) {
         if (gd->tx - r->tx < 0) {
             return gd;
@@ -467,7 +468,7 @@ static struct guard *guard_collision(struct game *g, struct runner *r)
     }
 
     // Look down.
-    gd = game_guard_get(g, r->x, r->y + 1);
+    gd = game_guard(g, r->x, r->y + 1);
     if (gd != NULL) {
         if (gd->ty - r->ty < 0) {
             return gd;
@@ -475,7 +476,7 @@ static struct guard *guard_collision(struct game *g, struct runner *r)
     }
 
     // Look left.
-    gd = game_guard_get(g, r->x - 1, r->y);
+    gd = game_guard(g, r->x - 1, r->y);
     if (gd != NULL) {
         if (r->tx - gd->tx < 0) {
             return gd;
@@ -483,7 +484,7 @@ static struct guard *guard_collision(struct game *g, struct runner *r)
     }
 
     // Look up.
-    gd = game_guard_get(g, r->x, r->y - 1);
+    gd = game_guard(g, r->x, r->y - 1);
     if (gd != NULL) {
         if (r->ty - gd->ty < 0) {
             return gd;
@@ -517,7 +518,7 @@ static void detect_collision(struct game *game)
 
     // Runner's death: walled up in a wall or hit by a guard.
     struct guard *guard = guard_collision(game, r);
-    if (is_tile(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
+    if (game_tile_t(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
         game->level_score_iter = 0;
@@ -850,7 +851,7 @@ void game_score(struct game *game, int score)
 }
 
 // Return guard at x:y coordinate if there is any.
-struct guard *game_guard_get(struct game *g, int x, int y)
+struct guard *game_guard(struct game *g, int x, int y)
 {
     for (int i = 0; i < g->nguards; i++) {
         if (g->guards[i]->x == x && g->guards[i]->y == y) {
@@ -864,6 +865,33 @@ struct guard *game_guard_get(struct game *g, int x, int y)
 // Return true if tested map tile acts like a hole dug by the runner.
 bool game_hole(struct game *g, int x, int y)
 {
+    if (!valid_map_xy(x, y)) {
+        return false;
+    }
+
     return g->map[y][x]->curt == MAP_TILE_EMPTY
         && g->map[y][x]->baset == MAP_TILE_BRICK;
+}
+
+// Check if tile at x:y coordinates has requested type.
+bool game_tile_t(struct game *game, int x, int y, enum map_tile_t t)
+{
+    if (!valid_map_xy(x, y)) {
+        return false;
+    }
+
+    return game->map[y][x]->curt == t;
+}
+
+// Returns true if guard or runner can move to tile with x:y coordinates.
+// False bricks are checked manually in-place when falling down.
+bool game_can_move(struct game *game, int x, int y)
+{
+    if (!valid_map_xy(x, y)) {
+        return false;
+    }
+
+    return game_tile_t(game, x, y, MAP_TILE_EMPTY)
+        || game_tile_t(game, x, y, MAP_TILE_LADDER)
+        || game_tile_t(game, x, y, MAP_TILE_ROPE);
 }

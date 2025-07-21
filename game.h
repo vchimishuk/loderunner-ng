@@ -27,6 +27,9 @@
 #define MAX_GOLD 32
 #define MAX_GUARDS 12
 
+#define MOVE_DX 8
+#define MOVE_DY 9
+
 /*
  * Game map single tile representation.
  */
@@ -108,7 +111,9 @@ bool game_tick(struct game *game, int key);
 void game_render(struct game *game, SDL_Renderer *renderer);
 void game_destroy(struct game *game);
 void game_score(struct game *game, int score);
-struct guard *game_guard_get(struct game *g, int x, int y);
+struct guard *game_guard(struct game *g, int x, int y);
 bool game_hole(struct game *g, int x, int y);
+bool game_tile_t(struct game *game, int x, int y, enum map_tile_t t);
+bool game_can_move(struct game *game, int x, int y);
 
 #endif /* GAME_H_ */
