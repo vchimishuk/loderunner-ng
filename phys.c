@@ -20,6 +20,10 @@
 // Check if tile at x:y coordinates has requested type.
 bool is_tile(struct game *game, int x, int y, enum map_tile_t t)
 {
+    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) {
+        return false;
+    }
+
     return game->map[y][x]->curt == t;
 }
 

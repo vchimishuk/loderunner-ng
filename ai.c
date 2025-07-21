@@ -77,7 +77,7 @@ static bool occupied(struct game *game, struct guard *me, int x, int y)
 // Return random X coordinate to reborn guard at.
 static int ai_rand_rebornx(void)
 {
-    static int row[MAP_WIDTH - 1];
+    static int row[MAP_WIDTH];
     static int idx = MAP_WIDTH;
 
     if (idx >= MAP_WIDTH) {
