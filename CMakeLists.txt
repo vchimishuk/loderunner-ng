@@ -18,7 +18,8 @@
 cmake_minimum_required(VERSION 3.27)
 project(LodeRunner)
 
-add_compile_options(-std=c99 -Wall -Wextra -Wpedantic)
+add_compile_options(-std=c99 -Wall -Wextra -Wpedantic -g -fsanitize=address -fno-omit-frame-pointer)
+add_link_options(-fsanitize=address)
 
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2main)

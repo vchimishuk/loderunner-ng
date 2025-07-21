@@ -219,7 +219,7 @@ struct animation *animation_init(enum animation_t t)
         // lasts so they have the same duration.
         a->sprites = sprites_init(2);
         a->sprites[0] = runner_sprite_init(24, 11);
-        a->sprites[2] = NULL;
+        a->sprites[1] = NULL;
         break;
     case ANIMATION_RUNNER_FALL_LEFT:
         a->sprites = sprites_init(2);
