@@ -23,7 +23,7 @@ Application also supports some useful command-line options.
 * `Right` -- move right
 * `Down` -- move down
 * `X` -- dig hole right to the runner
-* `Z` -- dig hole right to the runner
+* `Z` -- dig hole left to the runner
 * `P`, `Escape` -- pause
 * `Q` -- quit
 * `Enter` -- start game; skip keyhole animation
