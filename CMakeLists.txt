@@ -28,6 +28,8 @@ if (LINUX)
     add_compile_definitions(_GNU_SOURCE)
 endif()
 
+configure_file(config.h.in config.h)
+
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2main)
 find_package(SDL2_image REQUIRED CONFIG REQUIRED COMPONENTS SDL2_Image)

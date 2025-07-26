@@ -20,12 +20,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "config.h"
 #include "exit.h"
 #include "level.h"
 #include "path.h"
 #include "xmalloc.h"
-
-#define LEVELS_DIR "./levels"
 
 static const char *TILE_CHARS = "# $0SH-&@X";
 

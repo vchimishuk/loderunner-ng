@@ -16,23 +16,22 @@
 // along with loderunner-ng. If not, see <http://www.gnu.org/licenses/>.
 
 #include "SDL2/SDL_mixer.h"
+#include "config.h"
 #include "exit.h"
 #include "sound.h"
-
-#define SOUND_DIR "./sounds/"
 
 Mix_Music *sounds[SOUND_X_SIZE];
 
 static char *files[] = {
-    SOUND_DIR "dead.ogg",    // SOUND_DEAD
-    SOUND_DIR "dig.ogg",     // SOUND_DIG
-    SOUND_DIR "down.ogg",    // SOUND_DOWN
-    SOUND_DIR "fall.ogg",    // SOUND_FALL
-    SOUND_DIR "finish.ogg",  // SOUND_FINISH
-    SOUND_DIR "gold.ogg",    // SOUND_GOLD
-    SOUND_DIR "hladder.ogg", // SOUND_HLADDER
-    SOUND_DIR "reborn.ogg",  // SOUND_REBORN
-    SOUND_DIR "trap.ogg",    // SOUND_TRAP
+    SOUNDS_DIR "/dead.ogg",    // SOUND_DEAD
+    SOUNDS_DIR "/dig.ogg",     // SOUND_DIG
+    SOUNDS_DIR "/down.ogg",    // SOUND_DOWN
+    SOUNDS_DIR "/fall.ogg",    // SOUND_FALL
+    SOUNDS_DIR "/finish.ogg",  // SOUND_FINISH
+    SOUNDS_DIR "/gold.ogg",    // SOUND_GOLD
+    SOUNDS_DIR "/hladder.ogg", // SOUND_HLADDER
+    SOUNDS_DIR "/reborn.ogg",  // SOUND_REBORN
+    SOUNDS_DIR "/trap.ogg",    // SOUND_TRAP
 };
 
 static Mix_Music *load(enum sound snd)
