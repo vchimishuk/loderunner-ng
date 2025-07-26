@@ -1,0 +1,76 @@
+.\" Copyright 2025 Viacheslav Chimishuk <vchimishuk@yandex.ru>
+.\"
+.\" This file is part of loderunner-ng.
+.\"
+.\" loderunner-ng is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" loderunner-ng is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with loderunner-ng. If not, see <http://www.gnu.org/licenses/>.
+.\"
+.Dd July 24, 2025
+.Dt LODERUNNER-NG 1
+.Os
+.Sh NAME
+.Nm loderunner-ng
+.Nd a classic Lode Runner game remake
+.Sh SYNOPSIS
+.Bk -words
+.Bl -tag -width loderunner-ng
+.It Nm
+.Op Fl fm
+.Op Fl l Ar level
+.Op Fl V Ar volume
+.El
+.Ek
+.Sh DESCRIPTION
+.Nm loderunner-ng
+is a classic Lode Runner game remake heavily based on LodeRunner_TotalRecall
+implementation by Simon Hung written in JavaScript.
+Practically all sprites are taken from LodeRunner_TotalRecall project.
+Code is written from scratch using LodeRunner_TotalRecall as a reference and
+documentation.
+.Pp
+Original Lode Runner game is developed by Doug Smith and published by Broderbund
+in 1983.
+.Sh OPTIONS
+The following options are supported by
+.Nm :
+.Bl -tag -width indent
+.It Fl f
+Run game in full screen mode.
+.It Fl l Ar level
+Start game playing directly from the requested level.
+.Ar level
+argument can take values from 1 to 150.
+.It Fl m
+Mute. Totally disable sound.
+.It Fl V Ar volume
+Set volume level to
+.Ar volume
+percents.
+.Ar volume
+argument can take values from 1 to 100.
+.El
+.Sh KEYS
+.Bl -column "P, Escape"
+.It Li Left Ta move the runner left
+.It Li Up Ta move the runner up
+.It Li Right Ta move the runner right
+.It Li Down Ta move the runner down
+.It Li X Ta dig hole right to the runner
+.It Li Z Ta dig hole left to the runner
+.It Li P, Escape Ta toggle game pause
+.It Li Q Ta quit game
+.It Li Enter Ta start game; skip keyhole animation
+.El
+.Sh AUTHORS
+.An Viacheslav Chimishuk Aq Mt vchimishuk@yandex.ru
+.Lk https://github.com/vchimishuk/loderunner-ng
