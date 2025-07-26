@@ -20,11 +20,19 @@ project(LodeRunner)
 
 add_compile_options(-std=c99 -Wall -Wextra -Wpedantic -g -fsanitize=address -fno-omit-frame-pointer)
 add_link_options(-fsanitize=address)
+if (LINUX)
+    # For srandom(), random() & getopt().
+    add_compile_definitions(_GNU_SOURCE)
+endif()
 
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2main)
 find_package(SDL2_image REQUIRED CONFIG REQUIRED COMPONENTS SDL2_Image)
 find_package(SDL2_mixer REQUIRED CONFIG REQUIRED COMPONENTS SDL2_mixer)
+# 2.8.0 is required for Mix_PauseAudio().
+if (SDL2_mixer_VERSION VERSION_LESS "2.8.0")
+    message(SEND_ERROR "Minimum 2.8.0 SDL2_mixer version is required but ${SDL2_mixer_VERSION} found")
+endif()
 
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${SDL2_IMAGE_INCLUDE_DIR})

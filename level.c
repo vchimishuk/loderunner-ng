@@ -36,7 +36,7 @@ static const char *TILE_CHARS = "# $0SH-&@X";
 struct level *level_init(int n)
 {
     char buf[4];
-    snprintf(buf, 4, "%03d", n % 1000);
+    snprintf(buf, 4, "%03d", abs(n) % 1000);
     char *fname = path_join(LEVELS_DIR, buf);
     int f = open(fname, O_RDONLY);
     if (f == -1) {

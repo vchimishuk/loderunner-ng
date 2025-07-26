@@ -60,7 +60,8 @@ struct gold *gold_get(struct game *g, int x, int y)
 /*
  * Returns gold at runner or guard position if can.
  */
-struct gold *gold_pickup(struct game *game, int x, int y, int tx, int ty)
+struct gold *gold_pickup(struct game *game, int x, int y,
+    int tx __attribute__((unused)), int ty)
 {
     struct gold *g = gold_get(game, x, y);
     if (g != NULL) {
