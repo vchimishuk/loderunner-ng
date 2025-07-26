@@ -18,8 +18,11 @@
 cmake_minimum_required(VERSION 3.27)
 project(LodeRunner)
 
-add_compile_options(-std=c99 -Wall -Wextra -Wpedantic -g -fsanitize=address -fno-omit-frame-pointer)
-add_link_options(-fsanitize=address)
+add_compile_options(-std=gnu99 -Wall -Wextra -Wpedantic)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-g -O0 -fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endif()
 if (LINUX)
     # For srandom(), random() & getopt().
     add_compile_definitions(_GNU_SOURCE)
