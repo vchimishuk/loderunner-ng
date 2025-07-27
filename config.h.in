@@ -17,3 +17,4 @@
 
 #define LEVELS_DIR "@CMAKE_INSTALL_PREFIX@/share/loderunner-ng/levels"
 #define SOUNDS_DIR "@CMAKE_INSTALL_PREFIX@/share/loderunner-ng/sounds"
+#define TEXTURES_DIR "@CMAKE_INSTALL_PREFIX@/share/loderunner-ng/textures"

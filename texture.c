@@ -17,12 +17,11 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include "config.h"
 #include "exit.h"
 #include "level.h"
 #include "path.h"
 #include "texture.h"
-
-#define TEXTURES_DIR "./textures"
 
 static SDL_Texture *textures[TEXTURE_SIZE] = {NULL};
 
