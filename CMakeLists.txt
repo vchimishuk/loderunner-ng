@@ -18,6 +18,8 @@
 cmake_minimum_required(VERSION 3.27)
 project(LodeRunner)
 
+include(GNUInstallDirs)
+
 add_compile_options(-std=gnu99 -Wall -Wextra -Wpedantic)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-g -O0 -fsanitize=address -fno-omit-frame-pointer)
@@ -62,3 +64,7 @@ target_link_libraries(loderunner-ng PRIVATE SDL2::SDL2main)
 target_link_libraries(loderunner-ng PRIVATE SDL2_image::SDL2_image)
 target_link_libraries(loderunner-ng PRIVATE SDL2_mixer::SDL2_mixer)
 target_link_libraries(loderunner-ng PRIVATE SDL2::SDL2)
+
+install(TARGETS loderunner-ng DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY share/loderunner-ng DESTINATION share)
+install(FILES loderunner-ng.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
