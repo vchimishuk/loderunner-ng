@@ -7,7 +7,7 @@ Practically all sprites are taken from [LodeRunner_TotalRecall](https://github.c
 ### Build and run
 The app can be built using `cmake` command.
 ```shell
-$ cmake .
+$ cmake -DCMAKE_INSTALL_PREFIX=. .
 $ cmake --build .
 $ ./loderunner-ng
 ```
