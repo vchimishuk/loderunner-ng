@@ -1,3 +1,6 @@
+0.1.2 (31 July 2025)
+* Fix crash on levels with high amount of gold.
+
 0.1.1 (28 July 2025)
 * Add cmake install configuration.
 
