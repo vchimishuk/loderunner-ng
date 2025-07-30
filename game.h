@@ -24,7 +24,7 @@
 #include "level.h"
 #include "runner.h"
 
-#define MAX_GOLD 32
+#define MAX_GOLD 64
 #define MAX_GUARDS 12
 
 #define MOVE_DX 8
