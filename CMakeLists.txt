@@ -30,7 +30,7 @@ if (LINUX)
     add_compile_definitions(_GNU_SOURCE)
 endif()
 
-configure_file(config.h.in config.h)
+configure_file(config.h.in "${CMAKE_SOURCE_DIR}/config.h")
 
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2main)
