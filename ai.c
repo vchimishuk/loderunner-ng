@@ -197,14 +197,14 @@ static enum dir ai_scan_level(struct game *game, struct guard *guard)
 
         // Check if we can walk over the next level block or use ladder or rope on
         // the current one to avoid falling.
-        //
-        // TODO: Check nextlvl == MAP_TILE_ROPE for the level 92?
         if (lvl == MAP_TILE_LADDER || lvl == MAP_TILE_ROPE
             || (nextlvl == MAP_TILE_EMPTY && hole)
             || nextlvl == MAP_TILE_SOLID
             || nextlvl == MAP_TILE_LADDER
             || nextlvl == MAP_TILE_BRICK
-            || gd != NULL) {
+            || gd != NULL
+            // Special case for level 92, as in LodeRunner TotalRecall.
+            || gold_get(game, gx, gy + 1) != NULL) {
             if (gx < rx) {
                 gx++;
             } else {
