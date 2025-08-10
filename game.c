@@ -428,6 +428,14 @@ static void map_tick(struct game *game)
             if (t != NULL && t->cura != NULL) {
                 bool replay = animation_tick(t->cura);
                 if (replay) {
+                    // End of hole filling process. Lose gold if if becomes
+                    // walled by this tile.
+                    if (t->curt == MAP_TILE_EMPTY) {
+                        struct gold *gld = gold_get(game, j, i);
+                        if (gld != NULL) {
+                            gold_lose(game, gld);
+                        }
+                    }
                     map_tile_reset(t);
                 }
             }
