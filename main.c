@@ -177,6 +177,12 @@ int main(int argc, char **argv)
         die("failed to initialize SDL_mixer: %s", Mix_GetError());
     }
 
+#ifdef SDL_AUDIODRIVER
+    if (SDL_AudioInit(SDL_AUDIODRIVER) != 0) {
+        die("failed to initialize audio driver %s: %s", SDL_AUDIODRIVER, Mix_GetError());
+    }
+#endif
+
     if (Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 2048) == -1) {
         die("failed to open audio device: %s", Mix_GetError());
     }

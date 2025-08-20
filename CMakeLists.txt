@@ -60,6 +60,12 @@ add_executable(loderunner-ng
                    sound.c
                    texture.c
                    xmalloc.c)
+
+option(SDL_AUDIODRIVER "Name of the audio driver to use (e.g. alsa" "")
+if (SDL_AUDIODRIVER)
+    target_compile_definitions(loderunner-ng PRIVATE SDL_AUDIODRIVER="${SDL_AUDIODRIVER}")
+endif()
+
 target_link_libraries(loderunner-ng PRIVATE SDL2::SDL2main)
 target_link_libraries(loderunner-ng PRIVATE SDL2_image::SDL2_image)
 target_link_libraries(loderunner-ng PRIVATE SDL2_mixer::SDL2_mixer)
