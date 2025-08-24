@@ -11,6 +11,8 @@ $ cmake -DCMAKE_INSTALL_PREFIX=. .
 $ cmake --build .
 $ ./loderunner-ng
 ```
+There is package available for [Archlinux](https://aur.archlinux.org/packages/loderunner-ng).
+
 Application also supports some useful command-line options.
 * `-f` -- run in fullscreen mode
 * `-l N` -- start playing directly from level `N` (1..150)
