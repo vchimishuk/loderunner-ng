@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <SDL2/SDL.h>
@@ -43,7 +44,8 @@
 
 static void usage(void)
 {
-    fprintf(stderr, "usage: %s [-fm] [-l level] [-V volume]\n", PROG_NAME);
+    fprintf(stderr,
+        "usage: %s [-fm] [-c mode] [-l level] [-V volume]\n", PROG_NAME);
 }
 
 static void error(char *fmt, ...)
@@ -131,9 +133,22 @@ int main(int argc, char **argv)
     int start_level = 1;
     int volume = 100;
     Uint32 wflags = 0;
+    enum color_mode color = COLOR_ORIGINAL;
 
-    while ((ch = getopt(argc, argv, "fl:mV:")) != -1) {
+    while ((ch = getopt(argc, argv, "c:fl:mV:")) != -1) {
         switch (ch) {
+        case 'c':
+            if (strcmp(optarg, "original") == 0) {
+                color = COLOR_ORIGINAL;
+            } else if (strcmp(optarg, "green") == 0) {
+                color = COLOR_GREEN;
+            } else if (strcmp(optarg, "white") == 0) {
+                color = COLOR_WHITE;
+            } else {
+                error("invalid color mode: %s", optarg);
+                return EXIT_FAILURE;
+            }
+            break;
         case 'f':
             wflags |= SDL_WINDOW_FULLSCREEN;
             break;
@@ -203,6 +218,7 @@ int main(int argc, char **argv)
     }
 
     texture_init(renderer);
+    texture_set_color_mode(color);
     sound_init();
     sound_volume(volume);
 
@@ -234,6 +250,10 @@ int main(int argc, char **argv)
                     case SDLK_q:
                         start = true;
                         goto eog;
+                    case SDLK_c:
+                        texture_set_color_mode(
+                            (texture_color_mode() + 1) % COLOR_MODE_SIZE);
+                        break;
                     case SDLK_ESCAPE:
                     case SDLK_p:
                         pause = !pause;
