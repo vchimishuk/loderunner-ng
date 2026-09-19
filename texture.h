@@ -20,6 +20,17 @@
 
 #include <SDL.h>
 
+enum color_mode {
+    // Original full-color sprites.
+    COLOR_ORIGINAL,
+    // Monochrome green phosphor CRT.
+    COLOR_GREEN,
+    // Monochrome white phosphor CRT.
+    COLOR_WHITE,
+    // Keep it last.
+    COLOR_MODE_SIZE,
+};
+
 enum texture {
     TEXTURE_BRICK,
     TEXTURE_EMPTY,
@@ -43,5 +54,10 @@ SDL_Texture *texture_load(SDL_Renderer *renderer, char *file);
 void texture_init(SDL_Renderer *renderer);
 void texture_destroy(void);
 SDL_Texture *texture_get(enum texture t);
+
+// Set the active color mode and re-render all loaded textures in place.
+// Existing texture handles remain valid, so cached sprite pointers keep working.
+void texture_set_color_mode(enum color_mode mode);
+enum color_mode texture_color_mode(void);
 
 #endif /* TEXTURE_H_ */
