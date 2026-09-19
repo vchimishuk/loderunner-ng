@@ -505,7 +505,7 @@ static struct guard *guard_collision(struct game *g, struct runner *r)
 /*
  * Check game state for collisions: runner or guard death.
  */
-static void detect_collision(struct game *game)
+static void detect_collision(struct game *game, bool suicide)
 {
     struct runner *r = game->runner;
 
@@ -524,9 +524,11 @@ static void detect_collision(struct game *game)
         sound_play(SOUND_HLADDER);
     }
 
-    // Runner's death: walled up in a wall or hit by a guard.
-    struct guard *guard = guard_collision(game, r);
-    if (game_tile_t(game, r->x, r->y, MAP_TILE_BRICK) || guard != NULL) {
+    // Runner's death: walled up in a wall, hit by a guard or asked
+    // by the user.
+    if (game_tile_t(game, r->x, r->y, MAP_TILE_BRICK)
+        || guard_collision(game, r) != NULL
+        || suicide) {
         game->state = GSTATE_END;
         game->keyhole = KH_MAX_RADIUS;
         game->level_score_iter = 0;
@@ -840,7 +842,7 @@ bool game_tick(struct game *game, int key)
         map_tick(game);
         runner_tick(game, key);
         ai_tick(game);
-        detect_collision(game);
+        detect_collision(game, key == SDLK_DELETE);
         break;
     }
 

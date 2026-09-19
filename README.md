@@ -29,6 +29,7 @@ Application also supports some useful command-line options.
 * `P`, `Escape` -- pause
 * `Q` -- quit
 * `Enter` -- start game; skip keyhole animation
+* `Delete` -- commit suicide
 
 ### Copying
 The program's source code (excluding textures and sounds), is released under the GNU General Public License version 3 or later, which is distributed in the COPYING file. Textures and sound belongs to [LodeRunner_TotalRecall](https://github.com/SimonHung/LodeRunner_TotalRecall) project by Simon Hung.
